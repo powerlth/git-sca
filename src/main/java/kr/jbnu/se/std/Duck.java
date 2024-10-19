@@ -6,12 +6,13 @@ import java.awt.Point;
 
 public class Duck {
 
+    private int basespeed;
     public int x;
     public int y;
-    private int speed;
+    private double speed;
     public int score;
     private BufferedImage duckImg;
-
+    private Game game;
     public static long timeBetweenDucks = Framework.secInNanosec / 2;
     public static long lastDuckTime = 0;
 
@@ -22,24 +23,30 @@ public class Duck {
             {Framework.frameWidth, (int) (Framework.frameHeight * 0.78), -5, 50}
     };
     public static int[][] FlyingduckLines = {
-            {Framework.frameWidth, (int)(Framework.frameHeight * 0.0), -2, 60,},
-            {Framework.frameWidth, (int)(Framework.frameHeight * 0.10), -3, 80,},
-            {Framework.frameWidth, (int)(Framework.frameHeight * 0.20), -4, 100,},
-            {Framework.frameWidth, (int)(Framework.frameHeight * 0.30), -5, 120,}
+            {Framework.frameWidth, (int)(Framework.frameHeight * 0.0), -2, 40},
+            {Framework.frameWidth, (int)(Framework.frameHeight * 0.10), -3, 50},
+            {Framework.frameWidth, (int)(Framework.frameHeight * 0.20), -4, 60},
+            {Framework.frameWidth, (int)(Framework.frameHeight * 0.30), -5, 70}
     };
     public static int nextDuckLines = 0;
 
-    public Duck(int x, int y, int speed, int score, BufferedImage duckImg) {
+    public Duck(int x, int y, int speed, int score, BufferedImage duckImg, Game game) {
         this.x = x;
         this.y = y;
         this.speed = speed;
         this.score = score;
         this.duckImg = duckImg;
+        this.game = game;
+        this.basespeed = speed;
+
     }
 
-
     public void Update() {
-        x += speed;
+        if (game.getBulletTime().isActive()) {
+            x += speed / 2;// 속도를 절반으로 감소
+        } else {
+            x += speed;// 정상 속도
+        }
     }
 
     public void Draw(Graphics2D g2d) {
@@ -47,6 +54,10 @@ public class Duck {
     }
 
     public boolean isHit(Point mousePosition) {
+        if (duckImg == null) {
+            System.err.println("Duck image is null");
+            return false;
+        }
         int duckWidth = duckImg.getWidth();
         int duckHeight = duckImg.getHeight();
 

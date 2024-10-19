@@ -15,9 +15,9 @@ import java.io.*;
 public class Game {
     private final String highScoreFilePath = "src/main/resources/highscore.txt"; // 프로젝트 내의 resources 폴더에 저장
     private int highScore = 0;
-    private int stage; // 현재 스테이지
+    private static int stage; // 현재 스테이지
     private int kills = 0; // 플레이어가 잡은 오리 수
-    private double duckSpeedMultiplier; // 오리의 속도 배수
+    private static double duckSpeedMultiplier; // 오리의 속도 배수
     private long stageMessageTime = 0; // 스테이지 클리어 메시지 표시 시간
     private static final long STAGE_MESSAGE_DURATION = 3 * Framework.secInNanosec; // 메시지 지속 시간
     private int lastTreasureBoxScore = 0;
@@ -35,6 +35,7 @@ public class Game {
     private boolean treasureBoxCreated = false; // 보물상자가 생성되었는지 여부
     private long gameStartTime; // 게임 시작 시간
     private static BufferedImage backgroundImg;
+    private BulletTime bullettime = new BulletTime();
     /**
      * We use this to generate a random number.
      */
@@ -114,7 +115,6 @@ public class Game {
     private static BufferedImage[] itemImage = new BufferedImage[4];
 
     private Framework framework;
-
 
     private void setNextTreasureBoxTime() {
         // 10초에서 30초 사이의 랜덤 시간 (초 단위)
@@ -203,6 +203,15 @@ public class Game {
         lastTimeShoot = 0;
         timeBetweenShots = Framework.secInNanosec / 3;
     }
+    public void activateBulletTime() {
+        bullettime.activate();  // 불렛타임 활성화
+    }
+    public void update() {
+        bullettime.update();  // 불렛타임 상태 업데이트
+    }
+    public BulletTime getBulletTime() {
+        return bullettime;
+    }
 
     public void checkDuckHit(Point mousePosition) {
         Iterator<Duck> iterator = ducks.iterator();
@@ -215,6 +224,9 @@ public class Game {
                 iterator.remove();  // 오리 제거
                 killedDucks++;
                 kills++; // kills 증가
+                if (bullettime.isActive()){
+                    score += duck.score * 2;
+                }
                 score += duck.score;  // 점수 증가
                 kr.jbnu.se.std.Money.addMoney(1);
                 // kills가 증가할 때마다 효과음 재생
@@ -240,7 +252,6 @@ public class Game {
             System.out.println("Game Over due to miss clicks!");
         }
     }
-
     /**
      * Load game files - images, sounds, ...
      */
@@ -302,8 +313,8 @@ public class Game {
                     Duck.duckLines[Duck.nextDuckLines][1],
                     (int)(Duck.duckLines[Duck.nextDuckLines][2] * duckSpeedMultiplier), // 여기다 추가해야합니다: 속도 변경
                     Duck.duckLines[Duck.nextDuckLines][3],
-                    duckImg));
-            ducks.add(new Duck(Duck.FlyingduckLines[Duck.nextDuckLines][0] + random.nextInt(200), Duck.FlyingduckLines[Duck.nextDuckLines][1], Duck.FlyingduckLines[Duck.nextDuckLines][2], Duck.FlyingduckLines[Duck.nextDuckLines][3], topDuckImg));
+                    duckImg, this));
+            ducks.add(new Duck(Duck.FlyingduckLines[Duck.nextDuckLines][0] + random.nextInt(200), Duck.FlyingduckLines[Duck.nextDuckLines][1], Duck.FlyingduckLines[Duck.nextDuckLines][2], Duck.FlyingduckLines[Duck.nextDuckLines][3], topDuckImg, this));
 
             Duck.nextDuckLines++;
             if (Duck.nextDuckLines >= Duck.duckLines.length)
@@ -324,7 +335,7 @@ public class Game {
             // 다음 보물상자 생성 시간을 설정
             setNextTreasureBoxTime();
         }
-        if (kills >= 100 * stage) { // kills가 100이 넘으면 다음 스테이지로
+        if (kills >= 50 * stage) { // kills가 100이 넘으면 다음 스테이지로
             stage++;
             duckSpeedMultiplier *= 1.2; // 스테이지가 증가할 때마다 오리 속도 1.2배 증가
             stageMessageTime = System.nanoTime(); // 스테이지 메시지 표시 시간 기록
@@ -355,6 +366,7 @@ public class Game {
         Iterator<Duck> iterator = ducks.iterator();
         while (iterator.hasNext()) {
             Duck duck = iterator.next();
+            getBulletTime().update();
             duck.Update();
             if (duckImg != null && duck.x < 0 - duckImg.getWidth()) {
                 iterator.remove();
@@ -384,12 +396,11 @@ public class Game {
             }
         }
 
-        // 200번의 도망간 오리로 게임 종료
+        // 50번의 도망간 오리로 게임 종료
         if (runawayDucks >= 50) {
             Framework.gameState = Framework.GameState.GAMEOVER;
         }
     }
-
     /**
      * Draw the game to the screen.
      *
