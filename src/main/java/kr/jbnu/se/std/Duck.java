@@ -21,6 +21,12 @@ public class Duck {
             {Framework.frameWidth, (int) (Framework.frameHeight * 0.70), -4, 40},
             {Framework.frameWidth, (int) (Framework.frameHeight * 0.78), -5, 50}
     };
+    public static int[][] FlyingduckLines = {
+            {Framework.frameWidth, (int)(Framework.frameHeight * 0.0), -2, 60,},
+            {Framework.frameWidth, (int)(Framework.frameHeight * 0.10), -3, 80,},
+            {Framework.frameWidth, (int)(Framework.frameHeight * 0.20), -4, 100,},
+            {Framework.frameWidth, (int)(Framework.frameHeight * 0.30), -5, 120,}
+    };
     public static int nextDuckLines = 0;
 
     public Duck(int x, int y, int speed, int score, BufferedImage duckImg) {
@@ -30,6 +36,7 @@ public class Duck {
         this.score = score;
         this.duckImg = duckImg;
     }
+
 
     public void Update() {
         x += speed;

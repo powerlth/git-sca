@@ -5,6 +5,7 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URL;
@@ -48,7 +49,7 @@ public class Framework extends Canvas {
     private final long GAME_UPDATE_PERIOD = secInNanosec / GAME_FPS;
 
 
-    public static enum GameState {STARTING, VISUALIZING, GAME_CONTENT_LOADING, MAIN_MENU, OPTIONS, PLAYING, GAMEOVER, PAUSED, DESTROYED}
+    public static enum GameState {STARTING, VISUALIZING, GAME_CONTENT_LOADING, MAIN_MENU, OPTIONS, PLAYING, GAMEOVER, PAUSED, DESTROYED, SHOP}
 
     public static GameState gameState;
 
@@ -100,7 +101,7 @@ public class Framework extends Canvas {
 
 
     private void Initialize() {
-        playBackgroundMusic("/background_music.wav");  // 배경음악 재생
+        playBackgroundMusic("/background_music.wav");
     }
 
 
@@ -161,6 +162,8 @@ public class Framework extends Canvas {
                     // When all things that are called above finished, we change game status to main menu.
                     gameState = GameState.MAIN_MENU;
                     break;
+                case SHOP:
+                    break;
                 case VISUALIZING:
                     if (this.getWidth() > 1 && visualizingTime > secInNanosec) {
                         frameWidth = this.getWidth();
@@ -217,7 +220,15 @@ public class Framework extends Canvas {
                 g2d.setColor(Color.white);
                 g2d.drawString("GAME is LOADING", frameWidth / 2 - 50, frameHeight / 2);
                 break;
+            case SHOP:
+                try {
+                    Shop2.drawShopUI(g2d, frameWidth, frameHeight, this);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                break;
         }
+        repaint();
     }
     public void playBackgroundMusic(String resourcePath) {
         try {
@@ -278,8 +289,10 @@ public class Framework extends Canvas {
     private Point mousePosition() {
         try {
             Point mp = this.getMousePosition();
-            if (mp != null) return this.getMousePosition();
-            else return new Point(0, 0);
+            if (mp != null)
+                return this.getMousePosition();
+            else
+                return new Point(0, 0);
         } catch (Exception e) {
             return new Point(0, 0);
         }
@@ -297,6 +310,11 @@ public class Framework extends Canvas {
                 }
                 break;
             case PLAYING:
+                if (e.getKeyCode() == KeyEvent.VK_P)
+                    gameState = GameState.PAUSED;
+                else if (e.getKeyCode() == KeyEvent.VK_S)
+                    gameState = GameState.SHOP;
+                break;
             case MAIN_MENU:
                 if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
                     stopBackgroundMusic();  // 게임 종료 시 배경음악 중지
@@ -310,8 +328,18 @@ public class Framework extends Canvas {
                     handleResumeKeyInput(); // R 키로 게임 재개
                 }
                 break;
+            case SHOP:
+                if (e.getKeyCode() == KeyEvent.VK_S) {
+                    gameState = GameState.PLAYING; // S 키로 상점 나가기
+                }
+                break;
         }
     }
+    @Override
+    public synchronized void addMouseListener(MouseListener l) {
+        super.addMouseListener(l);
+    }
+
     @Override
     public void mouseClicked(MouseEvent e) {
         switch (gameState) {
@@ -320,6 +348,9 @@ public class Framework extends Canvas {
                 if (Framework.gameState == GameState.PLAYING) {
                     newGame(mainMenu.getSelectedStage());  // 선택한 스테이지에서 게임 시작
                 }
+                break;
+            case SHOP:
+                kr.jbnu.se.std.Shop2.handleShopMouseClick(e);
                 break;
         }
     }

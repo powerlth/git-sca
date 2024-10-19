@@ -5,10 +5,8 @@ import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.*;
 import java.util.List;
-import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
@@ -36,7 +34,7 @@ public class Game {
     private long treasureBoxStartTime;
     private boolean treasureBoxCreated = false; // 보물상자가 생성되었는지 여부
     private long gameStartTime; // 게임 시작 시간
-
+    private static BufferedImage backgroundImg;
     /**
      * We use this to generate a random number.
      */
@@ -85,7 +83,6 @@ public class Game {
     /**
      * Game background image.
      */
-    private BufferedImage backgroundImg;
 
     /**
      * Bottom grass.
@@ -96,6 +93,8 @@ public class Game {
      * Duck image.
      */
     private BufferedImage duckImg;
+
+    private BufferedImage topDuckImg;
 
     /**
      * Shotgun sight image.
@@ -111,6 +110,8 @@ public class Game {
      * Middle height of the sight image.
      */
     private int sightImgMiddleHeight;
+
+    private static BufferedImage[] itemImage = new BufferedImage[4];
 
     private Framework framework;
 
@@ -215,7 +216,7 @@ public class Game {
                 killedDucks++;
                 kills++; // kills 증가
                 score += duck.score;  // 점수 증가
-
+                kr.jbnu.se.std.Money.addMoney(1);
                 // kills가 증가할 때마다 효과음 재생
                 if (!hitOccurred) {
                     framework.playSoundEffect("/quack_sound.wav");  // 효과음 재생
@@ -247,13 +248,22 @@ public class Game {
         try {
 
             URL backgroundImgUrl = this.getClass().getResource("/images/background.jpg");
-            backgroundImg = ImageIO.read(backgroundImgUrl);
+
+            itemImage[0] = ImageIO.read(Objects.requireNonNull(this.getClass().getResource("/images/back1.jpg"))); // default
+            itemImage[1] = ImageIO.read(Objects.requireNonNull(this.getClass().getResource("/images/back2.jpg"))); // purchased item 1
+            itemImage[2] = ImageIO.read(Objects.requireNonNull(this.getClass().getResource("/images/back3.jpg"))); // purchased item 2
+            itemImage[3] = ImageIO.read(Objects.requireNonNull(this.getClass().getResource("/images/background.jpg"))); // purchased item 3
+
+            backgroundImg = itemImage[3];
 
             URL grassImgUrl = this.getClass().getResource("/images/grass.png");
             grassImg = ImageIO.read(grassImgUrl);
 
             URL duckImgUrl = this.getClass().getResource("/images/duck.png");
             duckImg = ImageIO.read(duckImgUrl);
+
+            URL topDuckImgUrl = this.getClass().getResource("/images/topduck.png");
+            topDuckImg = ImageIO.read(topDuckImgUrl); //나는오리
 
             URL sightImgUrl = this.getClass().getResource("/images/sight.png");
             sightImg = ImageIO.read(sightImgUrl);
@@ -293,6 +303,7 @@ public class Game {
                     (int)(Duck.duckLines[Duck.nextDuckLines][2] * duckSpeedMultiplier), // 여기다 추가해야합니다: 속도 변경
                     Duck.duckLines[Duck.nextDuckLines][3],
                     duckImg));
+            ducks.add(new Duck(Duck.FlyingduckLines[Duck.nextDuckLines][0] + random.nextInt(200), Duck.FlyingduckLines[Duck.nextDuckLines][1], Duck.FlyingduckLines[Duck.nextDuckLines][2], Duck.FlyingduckLines[Duck.nextDuckLines][3], topDuckImg));
 
             Duck.nextDuckLines++;
             if (Duck.nextDuckLines >= Duck.duckLines.length)
@@ -434,7 +445,8 @@ public class Game {
         g2d.drawString("KILLS: " + killedDucks, 160, 21);
         g2d.drawString("SHOOTS: " + shoots, 299, 21);
         g2d.drawString("SCORE: " + score, 440, 21);
-        g2d.drawString("MISSES: " + missClicks, 580, 21);
+        g2d.drawString("MISS: " + missClicks, 580, 21);
+        g2d.drawString("MONEY: " + kr.jbnu.se.std.Money.getMoney(), 10, 41);
         // 오리 속도 및 스테이지 정보 표시
         g2d.setFont(new Font("monospaced", Font.BOLD, 20));
         g2d.setColor(Color.orange);
@@ -474,7 +486,7 @@ public class Game {
         score = 0;
         shoots = 0;
         missClicks = 0;
-
+        kr.jbnu.se.std.Money.setMoney(0);
         // Reset the time-related variables.
         lastTimeShoot = 0;
         treasureBoxCreated = false; // 보물상자 초기화
@@ -483,5 +495,11 @@ public class Game {
         Duck.lastDuckTime = 0; // 오리 생성 시간을 초기화
 
         System.out.println("Game has been restarted.");
+    }
+
+    public static void setSelectedMenuImage(int index) {
+        if (index >= 0 && index < itemImage.length) {
+            backgroundImg = itemImage[index]; // Change the background image based on purchased item
+        }
     }
 }
