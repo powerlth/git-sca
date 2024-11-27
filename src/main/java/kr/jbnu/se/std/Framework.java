@@ -115,6 +115,7 @@ public class Framework extends Canvas {
     }
 
 
+
     private void GameLoop() {
         // This two variables are used in VISUALIZING state of the game. We used them to wait some time so that we get correct frame/window resolution.
         long visualizingTime = 0, lastVisualizingTime = System.nanoTime();
@@ -230,6 +231,7 @@ public class Framework extends Canvas {
         }
         repaint();
     }
+
     public void playBackgroundMusic(String resourcePath) {
         try {
             // 리소스 파일을 클래스 경로에서 읽어옴
@@ -352,6 +354,12 @@ public class Framework extends Canvas {
             case SHOP:
                 kr.jbnu.se.std.Shop2.handleShopMouseClick(e);
                 break;
+        }
+    }
+
+    public void keyPressed(KeyEvent e) {
+        if (e.getKeyCode() == KeyEvent.VK_B) {  // 'B' 키를 누르면 불렛타임 활성화
+            game.activateBulletTime();  // 불렛타임 활성화
         }
     }
 }

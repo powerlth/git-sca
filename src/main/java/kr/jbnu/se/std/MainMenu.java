@@ -95,6 +95,8 @@ public class MainMenu {
         for (int i = 0; i < stageButtons.length; i++) {
             if (new Rectangle(stageButtons[i].getX(), stageButtons[i].getY(), stageButtons[i].getWidth(), stageButtons[i].getHeight()).contains(e.getPoint())) {
                 selectedStage = i + 1; // 선택된 스테이지 설정
+                Framework.gameState = Framework.GameState.PLAYING;
+                Framework.selectedStage = selectedStage; //
                 System.out.println("Selected Stage: " + selectedStage);
             }
         }
