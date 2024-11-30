@@ -399,98 +399,12 @@ public class Game {
             Framework.highScore = score;  // 최고 점수를 갱신
             saveHighScore();  // 갱신된 점수를 저장
         }
-        if (System.nanoTime() - Duck.lastDuckTime >= Duck.timeBetweenDucks) {
-            ducks.add(new Duck(Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200),
-                    Duck.duckLines[Duck.nextDuckLines][1],
-                    (int)(Duck.duckLines[Duck.nextDuckLines][2] * duckSpeedMultiplier), // 여기다 추가해야합니다: 속도 변경
-                    Duck.duckLines[Duck.nextDuckLines][3],
-                    duckImg, this));
-            ducks.add(new Duck(Duck.FlyingduckLines[Duck.nextDuckLines][0] + random.nextInt(200), Duck.FlyingduckLines[Duck.nextDuckLines][1], Duck.FlyingduckLines[Duck.nextDuckLines][2], Duck.FlyingduckLines[Duck.nextDuckLines][3], topDuckImg, this));
-
-            Duck.nextDuckLines++;
-            if (Duck.nextDuckLines >= Duck.duckLines.length)
-                Duck.nextDuckLines = 0;
-
-            Duck.lastDuckTime = System.nanoTime();
-        }
-        // 보물상자 생성 로직
-        if (!treasureBoxCreated && System.nanoTime() >= nextTreasureBoxTime) {
-            treasureBox = new TreasureBox(100, 300, treasureImg);
-            treasureBoxCreated = true;
-            treasureBoxStartTime = System.nanoTime(); // 보물상자 생성 시간 기록
-            messageDisplayTime = System.nanoTime();
-            treasureBoxSurvivalTime = 0;
-
-            System.out.println("보물상자가 생성되었습니다!");
-
-            // 다음 보물상자 생성 시간을 설정
-            setNextTreasureBoxTime();
-        }
-        if (kills >= 50 * stage) { // kills가 100이 넘으면 다음 스테이지로
-            stage++;
-            duckSpeedMultiplier *= 1.2; // 스테이지가 증가할 때마다 오리 속도 1.2배 증가
-            stageMessageTime = System.nanoTime(); // 스테이지 메시지 표시 시간 기록
-
-            System.out.println(stage + "번째 스테이지로 이동하였습니다.");
-        }
-
-        // 보물상자 업데이트 및 제거 로직
-        if (treasureBox != null && treasureBox.isActive()) {
-            // 보물상자 생존 시간 업데이트
-            treasureBoxSurvivalTime = (System.nanoTime() - treasureBoxStartTime) / Framework.secInNanosec;
-
-            // 보물상자가 30초 이상 생존하면 점수 추가 및 보물상자 제거
-            if (treasureBoxSurvivalTime >= 30) {
-                lastTreasureBoxScore = 100 + random.nextInt(901); // 100~1000점 추가
-                score += lastTreasureBoxScore;
-                treasureBox = null; // 보물상자 제거
-
-                treasureBoxCreated = false; // 보물상자 초기화
-                setNextTreasureBoxTime(); // 다음 보물상자 생성 시간 설정
-
-                treasureBoxMessageTime = System.nanoTime();
-            } else {
-                treasureBox.Update(); // 보물상자 업데이트
-            }
-        }
-        // 오리 업데이트
-        Iterator<Duck> iterator = ducks.iterator();
-        while (iterator.hasNext()) {
-            Duck duck = iterator.next();
-            getBulletTime().update();
-            duck.Update();
-            if (duckImg != null && duck.x < 0 - duckImg.getWidth()) {
-                iterator.remove();
-                runawayDucks++;
-            }
-            if (treasureBox != null && treasureBox.isActive() && treasureBox.isHitByDuck(duck.x, duck.y, duckImg.getWidth(), duckImg.getHeight())) {
-                treasureBox.incrementHitCount(); // 오리가 보물상자를 맞았을 때 hitCount 증가
-            }
-        }
-        // 플레이어의 사격 처리
-        boolean currentMouseButtonState = Canvas.mouseButtonState(MouseEvent.BUTTON1); // 현재 마우스 버튼 상태
-
-        if (currentMouseButtonState) {
-            // 마우스 버튼이 눌린 상태
-            if (!isMouseButtonPressed) { // 버튼이 새로 눌린 경우
-                if (System.nanoTime() - lastTimeShoot >= timeBetweenShots) {
-                    shoots++;
-                    checkDuckHit(mousePosition); // 오리 맞추기 체크
-                    lastTimeShoot = System.nanoTime();
-                }
-                isMouseButtonPressed = true; // 버튼이 눌렸음을 기록
-            }
-        } else {
-            // 마우스 버튼이 놓인 상태
-            if (isMouseButtonPressed) {
-                isMouseButtonPressed = false; // 버튼 상태 리셋
-            }
-        }
-
-        // 50번의 도망간 오리로 게임 종료
-        if (runawayDucks >= 50) {
-            Framework.gameState = Framework.GameState.GAMEOVER;
-        }
+        createNewDucks(gameTime);
+        manageTreasureBox(gameTime);
+        updateStage(gameTime);
+        updateDucks(gameTime);
+        handlePlayerShooting(gameTime, mousePosition);
+        checkGameOver(gameTime);
     }
     /**
      * Draw the game to the screen.
