@@ -22,10 +22,10 @@ import javax.swing.JPanel;
 public abstract class Canvas extends JPanel implements KeyListener, MouseListener {
     
     // Keyboard states - Here are stored states for keyboard keys - is it down or not.
-    private static boolean[] keyboardState = new boolean[525];
+    private boolean[] keyboardState = new boolean[525];
     
     // Mouse states - Here are stored states for mouse keys - is it down or not.
-    private static boolean[] mouseState = new boolean[3];
+    private boolean[] mouseState = new boolean[3];
         
     
     public Canvas()
@@ -61,23 +61,10 @@ public abstract class Canvas extends JPanel implements KeyListener, MouseListene
         super.paintComponent(g2d);        
         Draw(g2d);
     }
-       
-    
-    // Keyboard
-    /**
-     * Is keyboard key "key" down?
-     * 
-     * @param key Number of key for which you want to check the state.
-     * @return true if the key is down, false if the key is not down.
-     */
-    public static boolean keyboardKeyState(int key)
-    {
-        return keyboardState[key];
-    }
     
     // Methods of the keyboard listener.
     @Override
-    public void keyPressed(KeyEvent e) 
+    public void keyPressed(KeyEvent e)
     {
         keyboardState[e.getKeyCode()] = true;
     }
@@ -104,7 +91,7 @@ public abstract class Canvas extends JPanel implements KeyListener, MouseListene
      * @param button Number of mouse button for which you want to check the state.
      * @return true if the button is down, false if the button is not down.
      */
-    public static boolean mouseButtonState(int button)
+    public boolean mouseButtonState(int button)
     {
         return mouseState[button - 1];
     }

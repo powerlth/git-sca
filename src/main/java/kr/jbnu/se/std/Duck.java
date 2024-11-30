@@ -13,22 +13,23 @@ public class Duck {
     public int score;
     private BufferedImage duckImg;
     private Game game;
-    public static long timeBetweenDucks = Framework.secInNanosec / 2;
-    public static long lastDuckTime = 0;
+    public long timeBetweenDucks = Framework.SECINNAMOSEC / 2;
+    public long lastDuckTime = 0;
+    private Framework framework;
 
-    public static int[][] duckLines = {
-            {Framework.frameWidth, (int) (Framework.frameHeight * 0.60), -2, 20},
-            {Framework.frameWidth, (int) (Framework.frameHeight * 0.65), -3, 30},
-            {Framework.frameWidth, (int) (Framework.frameHeight * 0.70), -4, 40},
-            {Framework.frameWidth, (int) (Framework.frameHeight * 0.78), -5, 50}
+    public int[][] duckLines = {
+            {framework.frameWidth, (int) (framework.frameHeight * 0.60), -2, 20},
+            {framework.frameWidth, (int) (framework.frameHeight * 0.65), -3, 30},
+            {framework.frameWidth, (int) (framework.frameHeight * 0.70), -4, 40},
+            {framework.frameWidth, (int) (framework.frameHeight * 0.78), -5, 50}
     };
-    public static int[][] FlyingduckLines = {
-            {Framework.frameWidth, (int)(Framework.frameHeight * 0.0), -2, 40},
-            {Framework.frameWidth, (int)(Framework.frameHeight * 0.10), -3, 50},
-            {Framework.frameWidth, (int)(Framework.frameHeight * 0.20), -4, 60},
-            {Framework.frameWidth, (int)(Framework.frameHeight * 0.30), -5, 70}
+    public int[][] FlyingduckLines = {
+            {framework.frameWidth, (int)(framework.frameHeight * 0.0), -2, 40},
+            {framework.frameWidth, (int)(framework.frameHeight * 0.10), -3, 50},
+            {framework.frameWidth, (int)(framework.frameHeight * 0.20), -4, 60},
+            {framework.frameWidth, (int)(framework.frameHeight * 0.30), -5, 70}
     };
-    public static int nextDuckLines = 0;
+    public int nextDuckLines = 0;
 
     public Duck(int x, int y, int speed, int score, BufferedImage duckImg, Game game) {
         this.x = x;
@@ -63,5 +64,18 @@ public class Duck {
 
         return (mousePosition.x >= x && mousePosition.x <= x + duckWidth) &&
                 (mousePosition.y >= y && mousePosition.y <= y + duckHeight);
+    }
+
+    public void ResetDuckLine(){
+        nextDuckLines = 0;
+    }
+    public void SyncDuckTime(){
+        lastDuckTime = System.nanoTime();
+    }
+    public void ResetDuckTime(){
+        lastDuckTime = 0;
+    }
+    public void plusDuckLine(){
+        nextDuckLines++;
     }
 }

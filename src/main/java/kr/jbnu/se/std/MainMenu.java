@@ -2,12 +2,7 @@ package kr.jbnu.se.std;
 
 import java.awt.*;
 import javax.swing.JButton;
-import javax.swing.JPanel;
 import java.awt.event.MouseEvent;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import javax.swing.JButton;
 import javax.imageio.ImageIO;
 import java.io.IOException;
 import java.net.URL;
@@ -17,8 +12,10 @@ public class MainMenu {
     private JButton[] stageButtons; // 스테이지 선택 버튼 배열
     private int selectedStage = 1;
     private Image backgroundImage;// 선택된 스테이지
+    public Framework framework;
 
-    public MainMenu() {
+    public MainMenu(Framework framework) {
+        this.framework = framework;
         try {
             URL imageUrl = this.getClass().getResource("/images/menu_background.jpg"); // 이미지 경로 설정
             backgroundImage = ImageIO.read(imageUrl);
@@ -39,19 +36,22 @@ public class MainMenu {
             });
         }
     }
+    public void setFramework(Framework framework) {
+        this.framework = framework;
+    }
 
     // 직접 draw 메서드를 구현
     public void draw(Graphics2D g2d) {
         if (backgroundImage != null) {
-            g2d.drawImage(backgroundImage, 0, -20, Framework.frameWidth, Framework.frameHeight, null);
+            g2d.drawImage(backgroundImage, 0, -20, framework.frameWidth, framework.frameHeight, null);
         }
         // 화면 크기 가져오기
-        int frameWidth = Framework.frameWidth;
-        int frameHeight = Framework.frameHeight;
+        int frameWidth = framework.frameWidth;
+        int frameHeight = framework.frameHeight;
 
         g2d.setFont(new Font("monospaced", Font.BOLD, 30));
         g2d.setColor(Color.RED);
-        g2d.drawString("High Score: " + Framework.highScore, Framework.frameWidth / 2 - -100, Framework.frameHeight / 2 - 160);
+        g2d.drawString("High Score: " + framework.highScore, framework.frameWidth / 2 - -100, framework.frameHeight / 2 - 160);
 
 
         // 버튼 크기
@@ -87,16 +87,16 @@ public class MainMenu {
     public void MouseClicked(MouseEvent e) {
         // 시작 버튼 클릭 처리
         if (new Rectangle(startButton.getX(), startButton.getY(), startButton.getWidth(), startButton.getHeight()).contains(e.getPoint())) {
-            Framework.gameState = Framework.GameState.PLAYING;
-            Framework.selectedStage = selectedStage; // 선택된 스테이지로 게임 시작
+            framework.PlayingState = Framework.GameState.PLAYING;
+            framework.newGame(selectedStage); // 선택된 스테이지로 게임 시작
         }
 
         // 스테이지 버튼 클릭 처리
         for (int i = 0; i < stageButtons.length; i++) {
             if (new Rectangle(stageButtons[i].getX(), stageButtons[i].getY(), stageButtons[i].getWidth(), stageButtons[i].getHeight()).contains(e.getPoint())) {
                 selectedStage = i + 1; // 선택된 스테이지 설정
-                Framework.gameState = Framework.GameState.PLAYING;
-                Framework.selectedStage = selectedStage; //
+                framework.PlayingState = Framework.GameState.PLAYING;
+                framework.newGame(selectedStage); //
                 System.out.println("Selected Stage: " + selectedStage);
             }
         }
