@@ -4,18 +4,13 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseListener;
 import java.io.IOException;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
-import java.io.InputStream;
 
 
 public class Framework extends Canvas {
 
     public static int highScore = 0;
     protected transient MainMenu mainMenu;
-    private transient Clip soundEffectClip;
-    public static int selectedStage = 1;
     public static int frameWidth;
     public static int frameHeight;
     public static final long SECINNANOSEC = 1000000000L;
@@ -31,23 +26,6 @@ public class Framework extends Canvas {
     transient GameStateManager gameStateManager = new GameStateManager();
     private transient InputHandler inputHandler = new InputHandler(this);
 
-
-    public void playSoundEffect(String resourcePath) {
-        try {
-            InputStream audioSrc = getClass().getResourceAsStream(resourcePath);
-            if (audioSrc == null) {
-                throw new RuntimeException("파일을 찾을 수 없습니다: " + resourcePath);
-            }
-
-            AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(audioSrc);
-            soundEffectClip = AudioSystem.getClip();
-            soundEffectClip.open(audioInputStream);
-            soundEffectClip.start();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
     public static void setFrameSize(int width, int height) {
         frameWidth = width;
         frameHeight = height;
@@ -58,7 +36,6 @@ public class Framework extends Canvas {
         }
     }
 
-
     public Framework() {
         super();
         this.addMouseListener(inputHandler);
@@ -68,9 +45,8 @@ public class Framework extends Canvas {
         this.gameStateManager = new GameStateManager(this);
         this.inputHandler = new InputHandler(this);
         this.mainMenu = new MainMenu();
-        //gameState = GameState.VISUALIZING;
+        gameState = GameState.VISUALIZING;
         gameStateManager.setCurrentState(GameState.VISUALIZING);
-        //mainMenu = new MainMenu();
 
         //We start game in new thread.
         Thread gameThread = new Thread() {
@@ -81,10 +57,6 @@ public class Framework extends Canvas {
         };
         gameThread.start();
     }
-
-
-
-
 
     private void GameLoop() {
         // This two variables are used in VISUALIZING state of the game. We used them to wait some time so that we get correct frame/window resolution.
@@ -178,6 +150,7 @@ public class Framework extends Canvas {
     @Override
     public void Draw(Graphics2D g2d) {
         if (gameState == null) {
+            gameState = GameState.VISUALIZING;
             gameStateManager.getGameState(GameState.MAIN_MENU); // Default to MAIN_MENU or another appropriate state
         }
         switch (gameState) {
@@ -315,25 +288,4 @@ public class Framework extends Canvas {
     public void addMouseListener(MouseListener l) {
         super.addMouseListener(l);
     }
-/*
-    @Override
-    public void mouseClicked(MouseEvent e) {
-        switch (gameState) {
-            case MAIN_MENU:
-                mainMenu.MouseClicked(e);  // 메인 메뉴에서 클릭 처리
-                if (Framework.gameState == GameState.PLAYING) {
-                    newGame(mainMenu.getSelectedStage());  // 선택한 스테이지에서 게임 시작
-                }
-                break;
-            case SHOP:
-                kr.jbnu.se.std.Shop2.handleShopMouseClick(e);
-                break;
-        }
-    }
-
-    public void keyPressed(KeyEvent e) {
-        if (e.getKeyCode() == KeyEvent.VK_B) {  // 'B' 키를 누르면 불렛타임 활성화
-            game.activateBulletTime();  // 불렛타임 활성화
-        }
-    }*/
 }

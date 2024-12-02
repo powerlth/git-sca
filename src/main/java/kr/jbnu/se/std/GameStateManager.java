@@ -7,14 +7,12 @@ import static kr.jbnu.se.std.Framework.SECINNANOSEC;
 public class GameStateManager {
     private int gameState;
     private Framework.GameState currentState;
-    private Framework.GameState previousState;
     private AudioManager audioManager;
     private long gameTime;
     private long lastTime;
     private Game game;
     private Framework framework;
     private long visualizingTime = 0, lastVisualizingTime = System.nanoTime();
-    private long beginTime, timeTaken, timeLeft;
 
     public GameStateManager() {
         this.currentState = Framework.GameState.STARTING;  // Default starting state
@@ -24,10 +22,6 @@ public class GameStateManager {
         this.currentState = Framework.GameState.STARTING;
     }
 
-    public Framework.GameState getCurrentState(){
-        return currentState;
-    }
-
     public void setCurrentState(Framework.GameState newState){
         System.out.println("Transitioning from " + currentState + " to " + newState);
         if (newState == null) {
@@ -35,6 +29,7 @@ public class GameStateManager {
         }
         transitionToState(newState);
         this.currentState = newState;
+        //updateState();
     }
 
     public synchronized void updateState() {
@@ -81,11 +76,6 @@ public class GameStateManager {
         if (newState != Framework.GameState.MAIN_MENU && currentState == Framework.GameState.MAIN_MENU) {
             audioManager.stopBackgroundMusic();
         }
-    }
-
-
-    public void setGameState(int state) {
-        this.gameState = state;
     }
 
     public void getGameState(Framework.GameState state) {

@@ -55,6 +55,7 @@ public class Game {
     private int sightImgMiddleHeight;
     private BufferedImage[] itemImage = new BufferedImage[4];
     private Framework framework;
+    private AudioManager audioManager;
     private String monofont = "monospaced";
     private int[][] duckLines = {
             {Framework.frameWidth, (int) (Framework.frameHeight * 0.60), -2, 20},
@@ -217,7 +218,7 @@ public class Game {
                 kr.jbnu.se.std.Money.addMoney(1);
                 // kills가 증가할 때마다 효과음 재생
                 if (!hitOccurred) {
-                    framework.playSoundEffect("/quack_sound.wav");  // 효과음 재생
+                    audioManager.playSoundEffect("/quack_sound.wav");  // 효과음 재생
                     hitOccurred = true;
                 }
 
@@ -447,7 +448,6 @@ public class Game {
         g2d.drawString("SCORE: " + score, 440, 21);
         g2d.drawString("MISS: " + missClicks, 580, 21);
         g2d.drawString("MONEY: " + kr.jbnu.se.std.Money.getMoney(), 10, 41);
-        // 오리 속도 및 스테이지 정보 표시
         GraphicsUtils.setCommonGraphicsSettings(g2d);
         g2d.drawString("현재 스테이지: " + stage, 10, 95); // 좌상단에 스테이지 표시
         g2d.drawString("오리 속도 배수: " + String.format("%.1f", duckSpeedMultiplier), 10, 125); // 좌상단에 오리 속도 배수 표시

@@ -2,12 +2,6 @@ package kr.jbnu.se.std;
 
 import java.awt.*;
 import javax.swing.JButton;
-import javax.swing.JPanel;
-import java.awt.event.MouseEvent;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import javax.swing.JButton;
 import javax.imageio.ImageIO;
 import java.io.IOException;
 import java.net.URL;

@@ -2,7 +2,6 @@ package kr.jbnu.se.std;
 
 
 import java.awt.*;
-import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.Objects;
@@ -60,11 +59,8 @@ public class Shop2 {
         // 상점 제목
         GraphicsUtils.setFont(g2d, FONTNAME, 30);
         g2d.setColor(Color.WHITE);
-        //g2d.setFont(new Font(FONTNAME, Font.BOLD, 30));
         g2d.drawString("Shop", frameWidth / 2 - 50, 150);
         g2d.drawString(String.valueOf(Money.getMoney()), frameWidth / 2 + 350, 80);
-        // 아이템 목록 그리기
-        //g2d.setFont(new Font("Arial", Font.PLAIN, 20));
         GraphicsUtils.setFont(g2d, FONTNAME, 20);
         for (int i = 0; i < shopItems.length; i++) {
             int x = 100 + i * 200; // 각 아이템의 X 좌표
