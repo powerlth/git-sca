@@ -10,9 +10,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
-import javax.swing.*;
 import java.io.*;
-import kr.jbnu.se.std.GraphicsUtils;
 
 public class Game {
     private final String highScoreFilePath = "src/main/resources/highscore.txt"; // 프로젝트 내의 resources 폴더에 저장
@@ -21,14 +19,14 @@ public class Game {
     private int kills = 0; // 플레이어가 잡은 오리 수
     private static double duckSpeedMultiplier; // 오리의 속도 배수
     private long stageMessageTime = 0; // 스테이지 클리어 메시지 표시 시간
-    private static final long STAGE_MESSAGE_DURATION = 3 * Framework.secInNanosec; // 메시지 지속 시간
+    private static final long STAGE_MESSAGE_DURATION = 3 * Framework.SECINNANOSEC; // 메시지 지속 시간
     private int lastTreasureBoxScore = 0;
     private long nextTreasureBoxTime = 0;
     private long treasureBoxMessageTime = 0;
-    private static final long MESSAGE_DURATION = 3 * Framework.secInNanosec;
+    private static final long MESSAGE_DURATION = 3 * Framework.SECINNANOSEC;
     private long treasureBoxSurvivalTime = 0;
     private long messageDisplayTime = 0;
-    private static final long MESSAGE_DISPLAY_DURATION = 3 * Framework.secInNanosec;
+    private static final long MESSAGE_DISPLAY_DURATION = 3 * Framework.SECINNANOSEC;
     private BufferedImage treasureImg;
     private boolean isMouseButtonPressed = false;
     private int missClicks;
@@ -36,93 +34,79 @@ public class Game {
     private long treasureBoxStartTime;
     private boolean treasureBoxCreated = false; // 보물상자가 생성되었는지 여부
     private long gameStartTime; // 게임 시작 시간
-    private static BufferedImage backgroundImg;
+    private BufferedImage backgroundImg;
     private BulletTime bullettime = new BulletTime();
     private volatile boolean isLoaded = false;
-    /**
-     * We use this to generate a random number.
-     */
+    private GameStateManager gameStateManager;
     private Random random;
-
-    /**
-     * Font that we will use to write statistic to the screen.
-     */
     private Font font;
-
-    /**
-     * Array list of the ducks.
-     */
     private List<Duck> ducks;  // List 타입으로 선언
-
-    /**
-     * How many ducks leave the screen alive?
-     */
     private int runawayDucks;
-
-    /**
-     * How many ducks the player killed?
-     */
     private int killedDucks;
-
-    /**
-     * For each killed duck, the player gets points.
-     */
     private int score;
-
-    /**
-     * How many times a player is shot?
-     */
     private int shoots;
-
-    /**
-     * Last time of the shoot.
-     */
     private long lastTimeShoot;
-
-    /**
-     * The time which must elapse between shots.
-     */
     private long timeBetweenShots;
-
-    /**
-     * Game background image.
-     */
-
-    /**
-     * Bottom grass.
-     */
-    private static BufferedImage grassImg;
-
-    /**
-     * Duck image.
-     */
+    private BufferedImage grassImg;
     private BufferedImage duckImg;
-
     private BufferedImage topDuckImg;
-
-    /**
-     * Shotgun sight image.
-     */
     private BufferedImage sightImg;
-
-    /**
-     * Middle width of the sight image.
-     */
     private int sightImgMiddleWidth;
-
-    /**
-     * Middle height of the sight image.
-     */
     private int sightImgMiddleHeight;
-
-    private static BufferedImage[] itemImage = new BufferedImage[4];
-
+    private BufferedImage[] itemImage = new BufferedImage[4];
     private Framework framework;
+    private String monofont = "monospaced";
+    private int[][] duckLines = {
+            {Framework.frameWidth, (int) (Framework.frameHeight * 0.60), -2, 20},
+            {Framework.frameWidth, (int) (Framework.frameHeight * 0.65), -3, 30},
+            {Framework.frameWidth, (int) (Framework.frameHeight * 0.70), -4, 40},
+            {Framework.frameWidth, (int) (Framework.frameHeight * 0.78), -5, 50}
+    };
+    private int[][] flyingDuckLines = {
+            {Framework.frameWidth, (int)(Framework.frameHeight * 0.0), -2, 40},
+            {Framework.frameWidth, (int)(Framework.frameHeight * 0.10), -3, 50},
+            {Framework.frameWidth, (int)(Framework.frameHeight * 0.20), -4, 60},
+            {Framework.frameWidth, (int)(Framework.frameHeight * 0.30), -5, 70}
+    };
 
+    private int nextDuckLineIndex = 0;
+    public static long timeBetweenDucks = Framework.SECINNANOSEC / 2;
+    public static long lastDuckTime = 0;
+    /*public static void initImages() {
+        try {
+            backgroundImg = ImageIO.read(Game.class.getResource("/images/background.png"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }*/
+    private static void setLastDuckTime(long time){
+        lastDuckTime = time;
+    }
+    private void createNewDucks(long gameTime) {
+        if (System.nanoTime() - lastDuckTime >= timeBetweenDucks) {
+            ducks.add(new Duck(duckLines[nextDuckLineIndex][0] + random.nextInt(200),
+                    duckLines[nextDuckLineIndex][1],
+                    (int)(duckLines[nextDuckLineIndex][2] * duckSpeedMultiplier),
+                    duckLines[nextDuckLineIndex][3], duckImg, this));
+            ducks.add(new Duck(flyingDuckLines[nextDuckLineIndex][0] + random.nextInt(200),
+                    flyingDuckLines[nextDuckLineIndex][1],
+                    flyingDuckLines[nextDuckLineIndex][2],
+                    flyingDuckLines[nextDuckLineIndex][3], topDuckImg, this));
+            nextDuckLineIndex = (nextDuckLineIndex + 1) % duckLines.length;
+            setLastDuckTime(System.nanoTime());
+        }
+    }
+    private static void setDuckSpeedMultiplier(double speed){
+        duckSpeedMultiplier *= speed;
+    }
     private void setNextTreasureBoxTime() {
         // 10초에서 30초 사이의 랜덤 시간 (초 단위)
         long randomTime = 10 + random.nextInt(21); // 10초 ~ 30초
-        nextTreasureBoxTime = System.nanoTime() + randomTime * Framework.secInNanosec;
+        nextTreasureBoxTime = System.nanoTime() + randomTime * Framework.SECINNANOSEC;
+    }
+
+    public static void plusStage() {
+        stage++;
     }
 
     private BufferedImage resizeImage(BufferedImage originalImage, int targetWidth, int targetHeight) {
@@ -155,7 +139,7 @@ public class Game {
                 LoadContent();
                 loadHighScore();
 
-                Framework.gameState = Framework.GameState.PLAYING;
+                gameStateManager.setCurrentState(Framework.GameState.PLAYING);
                 gameStartTime = System.nanoTime(); // 게임 시작 시간 기록
 
                 // 보물상자 생성 시간 초기화
@@ -191,7 +175,8 @@ public class Game {
      */
     void Initialize() {
         random = new Random();
-        font = new Font("monospaced", Font.BOLD, 18);
+        //font = new Font("monospaced", Font.BOLD, 18);
+        font = GraphicsUtils.newFont(monofont, 18);
 
         ducks = new ArrayList<Duck>();
 
@@ -202,7 +187,7 @@ public class Game {
         shoots = 0;
 
         lastTimeShoot = 0;
-        timeBetweenShots = Framework.secInNanosec / 3;
+        timeBetweenShots = Framework.SECINNANOSEC / 3;
     }
     public void activateBulletTime() {
         bullettime.activate();  // 불렛타임 활성화
@@ -249,7 +234,7 @@ public class Game {
 
         // 미스 클릭이 10번 이상이면 게임 오버
         if (missClicks >= 10) {
-            Framework.gameState = Framework.GameState.GAMEOVER;
+            gameStateManager.setCurrentState(Framework.GameState.GAMEOVER);
             System.out.println("Game Over due to miss clicks!");
         }
     }
@@ -308,23 +293,6 @@ public class Game {
         isLoaded = true;
     }
 
-    private void createNewDucks(long gameTime) { // 오리 생성
-        if (System.nanoTime() - Duck.lastDuckTime >= Duck.timeBetweenDucks) {
-            ducks.add(new Duck(Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200),
-                    Duck.duckLines[Duck.nextDuckLines][1],
-                    (int)(Duck.duckLines[Duck.nextDuckLines][2] * duckSpeedMultiplier),
-                    Duck.duckLines[Duck.nextDuckLines][3], duckImg, this));
-            ducks.add(new Duck(Duck.FlyingduckLines[Duck.nextDuckLines][0] + random.nextInt(200),
-                    Duck.FlyingduckLines[Duck.nextDuckLines][1],
-                    Duck.FlyingduckLines[Duck.nextDuckLines][2],
-                    Duck.FlyingduckLines[Duck.nextDuckLines][3], topDuckImg, this));
-            Duck.nextDuckLines++;
-            if (Duck.nextDuckLines >= Duck.duckLines.length)
-                Duck.nextDuckLines = 0;
-            Duck.lastDuckTime = System.nanoTime();
-        }
-    }
-
     private void manageTreasureBox(long gameTime) { //보물상자 관리
         if (!treasureBoxCreated && System.nanoTime() >= nextTreasureBoxTime) {
             treasureBox = new TreasureBox(100, 300, treasureImg);
@@ -337,7 +305,7 @@ public class Game {
         }
 
         if (treasureBox != null && treasureBox.isActive()) {
-            treasureBoxSurvivalTime = (System.nanoTime() - treasureBoxStartTime) / Framework.secInNanosec;
+            treasureBoxSurvivalTime = (System.nanoTime() - treasureBoxStartTime) / Framework.SECINNANOSEC;
             if (treasureBoxSurvivalTime >= 30) {
                 lastTreasureBoxScore = 100 + random.nextInt(901);
                 score += lastTreasureBoxScore;
@@ -353,8 +321,8 @@ public class Game {
 
     private void updateStage(long gameTime) { //스테이지 업데이트
         if (kills >= 50 * stage) {
-            stage++;
-            duckSpeedMultiplier *= 1.2;
+            plusStage();
+            setDuckSpeedMultiplier(1.2);
             stageMessageTime = System.nanoTime();
             System.out.println(stage + "번째 스테이지로 이동하였습니다.");
         }
@@ -394,7 +362,7 @@ public class Game {
 
     private void checkGameOver(long gameTime) { //게임 오버 조건 검사
         if (runawayDucks >= 50) {
-            Framework.gameState = Framework.GameState.GAMEOVER;
+            gameStateManager.setCurrentState(Framework.GameState.GAMEOVER);
         }
     }
     private void waitForLoading(){
@@ -410,10 +378,12 @@ public class Game {
     public void UpdateGame(long gameTime, Point mousePosition) {
         // 새로운 오리 생성 및 업데이트 로직
         waitForLoading();
-        if (score > Framework.highScore) {
+        Framework.setHighScore(score);
+        saveHighScore();
+        /*if (score > Framework.highScore) {
             Framework.highScore = score;  // 최고 점수를 갱신
             saveHighScore();  // 갱신된 점수를 저장
-        }
+        }*/
         createNewDucks(gameTime);
         manageTreasureBox(gameTime);
         updateStage(gameTime);
@@ -493,19 +463,23 @@ public class Game {
     public void DrawGameOver(Graphics2D g2d, Point mousePosition) {
         Draw(g2d, mousePosition);
 
-        g2d.setFont(new Font("monospaced", Font.BOLD, 70));
+        //g2d.setFont(new Font("monospaced", Font.BOLD, 70));
+        GraphicsUtils.setFont(g2d, monofont, 70);
         g2d.setColor(Color.black);
         g2d.drawString("Game Over", Framework.frameWidth / 2 - 179, (int)(Framework.frameHeight * 0.6) + 1);
-        g2d.setFont(new Font("monospaced", Font.BOLD, 30));
+        //g2d.setFont(new Font("monospaced", Font.BOLD, 30));
+        GraphicsUtils.setFont(g2d, monofont, 30);
         g2d.drawString("Press space to restart.", Framework.frameWidth / 2 - 179, (int)(Framework.frameHeight * 0.65) + 1);
         g2d.setColor(Color.red);
-        g2d.setFont(new Font("monospaced", Font.BOLD, 70));
+        //g2d.setFont(new Font("monospaced", Font.BOLD, 70));
+        GraphicsUtils.setFont(g2d, monofont, 70);
         g2d.drawString("Game Over", Framework.frameWidth / 2 - 179, (int)(Framework.frameHeight * 0.60));
-        g2d.setFont(new Font("monospaced", Font.BOLD, 30));
+        //g2d.setFont(new Font("monospaced", Font.BOLD, 30));
+        GraphicsUtils.setFont(g2d, monofont, 30);
         g2d.drawString("Press space to restart.", Framework.frameWidth / 2 - 179, (int)(Framework.frameHeight * 0.65));
     }
 
-    public void RestartGame() {
+    public void reStartGame() {
         // Removes all of the ducks from the list.
         ducks.clear();
 
@@ -521,12 +495,13 @@ public class Game {
         treasureBoxCreated = false; // 보물상자 초기화
         treasureBox = null; // 보물상자를 null로 초기화
 
-        Duck.lastDuckTime = 0; // 오리 생성 시간을 초기화
+        //Duck.lastDuckTime = 0; // 오리 생성 시간을 초기화
+        setLastDuckTime(0);
 
         System.out.println("Game has been restarted.");
     }
 
-    public static void setSelectedMenuImage(int index) {
+    public void setSelectedMenuImage(int index) {
         if (index >= 0 && index < itemImage.length) {
             backgroundImg = itemImage[index]; // Change the background image based on purchased item
         }

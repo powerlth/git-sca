@@ -2,7 +2,7 @@ package kr.jbnu.se.std;
 
 import java.awt.*;
 import java.awt.Toolkit;
-import static kr.jbnu.se.std.Framework.secInNanosec;
+import static kr.jbnu.se.std.Framework.SECINNANOSEC;
 
 public class GameStateManager {
     private int gameState;
@@ -88,8 +88,8 @@ public class GameStateManager {
         this.gameState = state;
     }
 
-    public int getGameState() {
-        return gameState;
+    public void getGameState(Framework.GameState state) {
+        gameState = state.ordinal();
     }
 
     private void handleMainMenuLogic() {
@@ -116,9 +116,8 @@ public class GameStateManager {
     }
 
     private void handleVisualizingLogic() {
-        if (framework.getWidth() > 1 && visualizingTime > secInNanosec) {
-            framework.frameWidth = framework.getWidth();
-            framework.frameHeight = framework.getHeight();
+        if (framework.getWidth() > 1 && visualizingTime > SECINNANOSEC) {
+            framework.setFrameSize(framework.getWidth(),framework.getHeight());
             setCurrentState(Framework.GameState.STARTING);
         } else {
             visualizingTime += System.nanoTime() - lastVisualizingTime;

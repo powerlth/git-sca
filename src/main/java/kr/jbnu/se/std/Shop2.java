@@ -13,11 +13,12 @@ import static kr.jbnu.se.std.Money.subtractMoney;
 public class Shop2 {
 
     // 아이템 정보 (아이템 이름과 가격)
-    private static final String[] shopItems = {"Item 1", "Item 2", "Item 3"};
+    static final String[] shopItems = {"Item 1", "Item 2", "Item 3"};
     private static final int[] itemPrices = {50, 100, 200};
-    private static int selectedItem = -1; // 선택된 아이템 인덱스
+    static int selectedItem = -1; // 선택된 아이템 인덱스
     private static BufferedImage[] itemImage = new BufferedImage[shopItems.length];
-    private static String shopMessage = "";
+    static String shopMessage = "";
+    private static final String FONTNAME = ("Arial");
 
     public static void loadItemImages() throws IOException {
             itemImage[0] = ImageIO.read(Objects.requireNonNull(Shop2.class.getResource("/images/back1.jpg"))); // Item 1 이미지
@@ -25,6 +26,31 @@ public class Shop2 {
             itemImage[2] = ImageIO.read(Objects.requireNonNull(Shop2.class.getResource("/images/back3.jpg"))); // Item 3 이미지
 
     }
+
+    public static String[] getshopItems() {
+        return shopItems.clone();
+    }
+    public static int getSelectedItems() {
+        return selectedItem;
+    }
+    public static void setSelectedItem(int index) {
+        if (index >= 0 && index < shopItems.length) {
+            selectedItem = index;
+        } else {
+            throw new IllegalArgumentException("Invalid item index");
+        }
+    }
+    public static String getShopMessage() {
+        return shopMessage;
+    }
+    public static int[] getItemPrices(){
+        return itemPrices.clone();
+    }
+
+    public static void setShopMessage(String message) {
+        shopMessage = message;
+    }
+
     public static void drawShopUI(Graphics2D g2d, int frameWidth, int frameHeight, Component component) throws IOException {
         // 상점 배경 그리기
         g2d.setColor(new Color(255, 255, 255, 150));
@@ -32,12 +58,14 @@ public class Shop2 {
         component.setCursor(Cursor.getDefaultCursor());
         loadItemImages();
         // 상점 제목
+        GraphicsUtils.setFont(g2d, FONTNAME, 30);
         g2d.setColor(Color.WHITE);
-        g2d.setFont(new Font("Arial", Font.BOLD, 30));
+        //g2d.setFont(new Font(FONTNAME, Font.BOLD, 30));
         g2d.drawString("Shop", frameWidth / 2 - 50, 150);
         g2d.drawString(String.valueOf(Money.getMoney()), frameWidth / 2 + 350, 80);
         // 아이템 목록 그리기
-        g2d.setFont(new Font("Arial", Font.PLAIN, 20));
+        //g2d.setFont(new Font("Arial", Font.PLAIN, 20));
+        GraphicsUtils.setFont(g2d, FONTNAME, 20);
         for (int i = 0; i < shopItems.length; i++) {
             int x = 100 + i * 200; // 각 아이템의 X 좌표
             int y = 200; // 아이템의 Y 좌표
@@ -57,12 +85,13 @@ public class Shop2 {
                 g2d.setColor(Color.WHITE); // 다시 기본 색상으로 돌림
             }
         }
-        g2d.setFont(new Font("Arial", Font.PLAIN, 20));
+        //g2d.setFont(new Font("Arial", Font.PLAIN, 20));
+        GraphicsUtils.setFont(g2d, FONTNAME, 20);
         g2d.setColor(Color.YELLOW);
         g2d.drawString(shopMessage, frameWidth / 2 - 100, frameHeight - 50); // 하단에 메시지 출력
     }
 
-    public static void handleShopMouseClick(MouseEvent e) {
+    /*public void handleShopMouseClick(MouseEvent e) {
         Point clickPoint = e.getPoint();
         shopMessage = "";
         //System.out.println("Mouse clicked at: " + clickPoint);
@@ -81,9 +110,9 @@ public class Shop2 {
         if (selectedItem != -1 && Money.getMoney() >= itemPrices[selectedItem]) {
             Money.subtractMoney(itemPrices[selectedItem]);
             shopMessage = shopItems[selectedItem] + " purchased! Remaining money: " + Money.getMoney();
-            Game.setSelectedMenuImage(selectedItem);
+            game.setSelectedMenuImage(selectedItem);
         } else {
             shopMessage = "Not enough money to buy ";
         }
-    }
+    }*/
 }

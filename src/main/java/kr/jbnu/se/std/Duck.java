@@ -13,7 +13,7 @@ public class Duck {
     public int score;
     private BufferedImage duckImg;
     private Game game;
-    public static long timeBetweenDucks = Framework.secInNanosec / 2;
+    public static long timeBetweenDucks = Framework.SECINNANOSEC / 2;
     public static long lastDuckTime = 0;
 
     public static int[][] duckLines = {

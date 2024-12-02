@@ -2,48 +2,34 @@ package kr.jbnu.se.std;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
-import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.net.URL;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.imageio.ImageIO;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import java.io.InputStream;
-import java.awt.Toolkit;
 
 
 public class Framework extends Canvas {
 
     public static int highScore = 0;
-    protected MainMenu mainMenu;
-    private Clip soundEffectClip;
+    protected transient MainMenu mainMenu;
+    private transient Clip soundEffectClip;
     public static int selectedStage = 1;
     public static int frameWidth;
     public static int frameHeight;
-    public static final long secInNanosec = 1000000000L;
-    public static final long milisecInNanosec = 1000000L;
+    public static final long SECINNANOSEC = 1000000000L;
+    public static final long MILISEC_IN_NANOSEC = 1000000L;
     private final int GAME_FPS = 60;
-    private final long GAME_UPDATE_PERIOD = secInNanosec / GAME_FPS;
+    private final long GAME_UPDATE_PERIOD = SECINNANOSEC / GAME_FPS;
     public static enum GameState {STARTING, VISUALIZING, GAME_CONTENT_LOADING, MAIN_MENU, OPTIONS, PLAYING, GAMEOVER, PAUSED, DESTROYED, SHOP}
     public static GameState gameState;
-    private long gameTime;
-    // It is used for calculating elapsed time.
-    private long lastTime;
-    // The actual game
-    Game game;
-    // 배경음악 재생을 위한 Clip 객체
-    private Clip backgroundMusicClip;
-    private BufferedImage shootTheDuckMenuImg;
-
-    AudioManager audioManager = new AudioManager();
-    private GraphicsManager graphicsManager = new GraphicsManager();
-    GameStateManager gameStateManager = new GameStateManager();
-    private InputHandler inputHandler = new InputHandler(this);
+    transient Game game;
+    transient private Clip backgroundMusicClip;
+    transient AudioManager audioManager = new AudioManager();
+    private transient GraphicsManager graphicsManager = new GraphicsManager();
+    transient GameStateManager gameStateManager = new GameStateManager();
+    private transient InputHandler inputHandler = new InputHandler(this);
 
 
     public void playSoundEffect(String resourcePath) {
@@ -59,6 +45,16 @@ public class Framework extends Canvas {
             soundEffectClip.start();
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    public static void setFrameSize(int width, int height) {
+        frameWidth = width;
+        frameHeight = height;
+    }
+    public static void setHighScore(int newScore) {
+        if (newScore > highScore) {
+            Framework.highScore = newScore;
         }
     }
 
@@ -95,7 +91,7 @@ public class Framework extends Canvas {
         long visualizingTime = 0, lastVisualizingTime = System.nanoTime();
         long beginTime, timeTaken, timeLeft;
 
-        while (true) {
+        while (gameState != GameState.DESTROYED) {
             beginTime = System.nanoTime();
             /*switch (gameState) {
                 case MAIN_MENU:
@@ -137,7 +133,7 @@ public class Framework extends Canvas {
                 case SHOP:
                     break;
                 case VISUALIZING:
-                    if (this.getWidth() > 1 && visualizingTime > secInNanosec) {
+                    if (this.getWidth() > 1 && visualizingTime > SECINNANOSEC) {
                         frameWidth = this.getWidth();
                         frameHeight = this.getHeight();
                         gameState = GameState.STARTING;
@@ -151,7 +147,7 @@ public class Framework extends Canvas {
             repaint();
 
             timeTaken = System.nanoTime() - beginTime;
-            timeLeft = (GAME_UPDATE_PERIOD - timeTaken) / milisecInNanosec;
+            timeLeft = (GAME_UPDATE_PERIOD - timeTaken) / MILISEC_IN_NANOSEC;
             if (timeLeft < 10) timeLeft = 10;
             try {
                 Thread.sleep(timeLeft);
@@ -164,7 +160,7 @@ public class Framework extends Canvas {
 
     private void sleepTimeCalculation(long beginTime) {
         long timeTaken = System.nanoTime() - beginTime;
-        long timeLeft = (GAME_UPDATE_PERIOD - timeTaken) / milisecInNanosec;
+        long timeLeft = (GAME_UPDATE_PERIOD - timeTaken) / MILISEC_IN_NANOSEC;
         if (timeLeft < 10) timeLeft = 10;  // Ensure a minimal sleep time
         try {
             Thread.sleep(timeLeft);
@@ -182,7 +178,7 @@ public class Framework extends Canvas {
     @Override
     public void Draw(Graphics2D g2d) {
         if (gameState == null) {
-            gameState = GameState.MAIN_MENU; // Default to MAIN_MENU or another appropriate state
+            gameStateManager.getGameState(GameState.MAIN_MENU); // Default to MAIN_MENU or another appropriate state
         }
         switch (gameState) {
             case MAIN_MENU:
@@ -222,6 +218,9 @@ public class Framework extends Canvas {
                     throw new RuntimeException(e);
                 }
                 break;
+            case DESTROYED: break;
+            case VISUALIZING: break;
+            case STARTING: break;
         }
         repaint();
     }
@@ -234,14 +233,14 @@ public class Framework extends Canvas {
 
     public void handlePauseKeyInput() {
         if (Framework.gameState == Framework.GameState.PLAYING) {
-            Framework.gameState = Framework.GameState.PAUSED;
+            gameStateManager.setCurrentState(Framework.GameState.PAUSED);
             System.out.println("Game Paused");
         }
     }
 
     public void handleResumeKeyInput() {
         if (Framework.gameState == Framework.GameState.PAUSED) {
-            Framework.gameState = Framework.GameState.PLAYING;
+            gameStateManager.setCurrentState(Framework.GameState.PLAYING);
             System.out.println("Game Resumed");
         }
     }
@@ -251,12 +250,12 @@ public class Framework extends Canvas {
     void newGame(int selectedStage) {
         game = new Game(this, selectedStage);  // 선택한 스테이지로 게임 시작
         System.out.println("stage start");
-        gameState = GameState.PLAYING;
+        gameStateManager.setCurrentState(GameState.PLAYING);
     }
 
     private void restartGame() {
         if (game != null) {
-            game.RestartGame();  // Game 객체의 RestartGame() 호출
+            game.reStartGame();  // Game 객체의 reStartGame() 호출
         } else {
             newGame(1);  // Game 객체가 없을 경우 새로 생성
         }
@@ -264,12 +263,9 @@ public class Framework extends Canvas {
     protected Point mousePosition() {
         try {
             Point mp = this.getMousePosition();
-            if (mp != null)
-                return this.getMousePosition();
-            else
-                return new Point(0, 0);
-        } catch (Exception e) {
-            return new Point(0, 0);
+            return mp != null ? mp : new Point(0, 0);
+        } catch (NullPointerException e) {
+            return new Point(0, 0); // 더 구체적인 예외 처리
         }
     }
 
@@ -281,14 +277,14 @@ public class Framework extends Canvas {
                     stopBackgroundMusic();  // 게임 종료 시 배경음악 중지
                     System.exit(0);
                 } else if (e.getKeyCode() == KeyEvent.VK_SPACE) {
-                    gameState = GameState.MAIN_MENU;  // 스페이스바를 누르면 메인 메뉴로 돌아가기
+                    gameStateManager.setCurrentState(GameState.MAIN_MENU);  // 스페이스바를 누르면 메인 메뉴로 돌아가기
                 }
                 break;
             case PLAYING:
                 if (e.getKeyCode() == KeyEvent.VK_P)
-                    gameState = GameState.PAUSED;
+                    gameStateManager.setCurrentState(GameState.PAUSED);
                 else if (e.getKeyCode() == KeyEvent.VK_S)
-                    gameState = GameState.SHOP;
+                    gameStateManager.setCurrentState(GameState.SHOP);
                 break;
             case MAIN_MENU:
                 if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
@@ -305,13 +301,18 @@ public class Framework extends Canvas {
                 break;
             case SHOP:
                 if (e.getKeyCode() == KeyEvent.VK_S) {
-                    gameState = GameState.PLAYING; // S 키로 상점 나가기
+                    gameStateManager.setCurrentState(GameState.PLAYING); // S 키로 상점 나가기
                 }
                 break;
+            case STARTING: break;
+            case VISUALIZING: break;
+            case OPTIONS: break;
+            case DESTROYED: break;
+            case GAME_CONTENT_LOADING: break;
         }
     }
     @Override
-    public synchronized void addMouseListener(MouseListener l) {
+    public void addMouseListener(MouseListener l) {
         super.addMouseListener(l);
     }
 /*
