@@ -1,8 +1,6 @@
 package kr.jbnu.se.std;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.Point;
+import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -15,55 +13,37 @@ import javax.imageio.ImageIO;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
-import java.io.File;
-import java.awt.Font;
 import java.io.InputStream;
 import java.awt.Toolkit;
-import java.awt.Cursor;import java.awt.Toolkit;
-import java.awt.Cursor;
-import java.awt.Image;
-
-
 
 
 public class Framework extends Canvas {
 
     public static int highScore = 0;
-    private MainMenu mainMenu;
+    protected MainMenu mainMenu;
     private Clip soundEffectClip;
     public static int selectedStage = 1;
-
-
     public static int frameWidth;
-
     public static int frameHeight;
-
     public static final long secInNanosec = 1000000000L;
-
-
     public static final long milisecInNanosec = 1000000L;
-
-
     private final int GAME_FPS = 60;
-
     private final long GAME_UPDATE_PERIOD = secInNanosec / GAME_FPS;
-
-
     public static enum GameState {STARTING, VISUALIZING, GAME_CONTENT_LOADING, MAIN_MENU, OPTIONS, PLAYING, GAMEOVER, PAUSED, DESTROYED, SHOP}
-
     public static GameState gameState;
-
     private long gameTime;
     // It is used for calculating elapsed time.
     private long lastTime;
-
     // The actual game
-    private Game game;
-
+    Game game;
     // 배경음악 재생을 위한 Clip 객체
     private Clip backgroundMusicClip;
-
     private BufferedImage shootTheDuckMenuImg;
+
+    AudioManager audioManager = new AudioManager();
+    private GraphicsManager graphicsManager = new GraphicsManager();
+    GameStateManager gameStateManager = new GameStateManager();
+    private InputHandler inputHandler = new InputHandler(this);
 
 
     public void playSoundEffect(String resourcePath) {
@@ -85,9 +65,16 @@ public class Framework extends Canvas {
 
     public Framework() {
         super();
-
-        gameState = GameState.VISUALIZING;
-        mainMenu = new MainMenu();
+        this.addMouseListener(inputHandler);
+        this.addKeyListener(inputHandler);
+        this.audioManager = new AudioManager();
+        this.graphicsManager = new GraphicsManager();
+        this.gameStateManager = new GameStateManager(this);
+        this.inputHandler = new InputHandler(this);
+        this.mainMenu = new MainMenu();
+        //gameState = GameState.VISUALIZING;
+        gameStateManager.setCurrentState(GameState.VISUALIZING);
+        //mainMenu = new MainMenu();
 
         //We start game in new thread.
         Thread gameThread = new Thread() {
@@ -100,19 +87,6 @@ public class Framework extends Canvas {
     }
 
 
-    private void Initialize() {
-        playBackgroundMusic("/background_music.wav");
-    }
-
-
-    private void LoadContent() {
-        try {
-            URL shootTheDuckMenuImgUrl = this.getClass().getResource("/images/menu.jpg");
-            shootTheDuckMenuImg = ImageIO.read(shootTheDuckMenuImgUrl);
-        } catch (IOException ex) {
-            Logger.getLogger(Framework.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
 
 
 
@@ -123,8 +97,7 @@ public class Framework extends Canvas {
 
         while (true) {
             beginTime = System.nanoTime();
-
-            switch (gameState) {
+            /*switch (gameState) {
                 case MAIN_MENU:
                     setCursor(Cursor.getDefaultCursor());  // 메인 메뉴에서는 기본 커서 표시
                     // 메인 메뉴 로직 (추가적으로 필요한 경우)
@@ -182,12 +155,35 @@ public class Framework extends Canvas {
             if (timeLeft < 10) timeLeft = 10;
             try {
                 Thread.sleep(timeLeft);
-            } catch (InterruptedException ex) { }
+            } catch (InterruptedException ex) { }*/
+            gameStateManager.updateState();
+            repaint();
+            sleepTimeCalculation(beginTime);
         }
     }
 
+    private void sleepTimeCalculation(long beginTime) {
+        long timeTaken = System.nanoTime() - beginTime;
+        long timeLeft = (GAME_UPDATE_PERIOD - timeTaken) / milisecInNanosec;
+        if (timeLeft < 10) timeLeft = 10;  // Ensure a minimal sleep time
+        try {
+            Thread.sleep(timeLeft);
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    /*@Override
+    public void paint(Graphics g) {
+        super.paint(g);
+        graphicsManager.drawComponents((Graphics2D) g, gameStateManager.getCurrentState());
+    }*/
+
     @Override
     public void Draw(Graphics2D g2d) {
+        if (gameState == null) {
+            gameState = GameState.MAIN_MENU; // Default to MAIN_MENU or another appropriate state
+        }
         switch (gameState) {
             case MAIN_MENU:
                 if (mainMenu != null) {
@@ -230,32 +226,9 @@ public class Framework extends Canvas {
         repaint();
     }
 
-    public void playBackgroundMusic(String resourcePath) {
-        try {
-            // 리소스 파일을 클래스 경로에서 읽어옴
-            InputStream audioSrc = getClass().getResourceAsStream(resourcePath);
-            if (audioSrc == null) {
-                throw new RuntimeException("파일을 찾을 수 없습니다: " + resourcePath);
-            }
-
-            AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(audioSrc);
-            Clip clip = AudioSystem.getClip();
-            clip.open(audioInputStream);
-            clip.loop(Clip.LOOP_CONTINUOUSLY);  // 음악을 무한 반복
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void stopBackgroundMusic() {
+    private void stopBackgroundMusic() {
         if (backgroundMusicClip != null && backgroundMusicClip.isRunning()) {
             backgroundMusicClip.stop();
-        }
-    }
-
-    public void closeBackgroundMusic() {
-        if (backgroundMusicClip != null) {
-            backgroundMusicClip.close();
         }
     }
 
@@ -275,8 +248,10 @@ public class Framework extends Canvas {
 
 
 
-    private void newGame(int selectedStage) {
+    void newGame(int selectedStage) {
         game = new Game(this, selectedStage);  // 선택한 스테이지로 게임 시작
+        System.out.println("stage start");
+        gameState = GameState.PLAYING;
     }
 
     private void restartGame() {
@@ -286,7 +261,7 @@ public class Framework extends Canvas {
             newGame(1);  // Game 객체가 없을 경우 새로 생성
         }
     }
-    private Point mousePosition() {
+    protected Point mousePosition() {
         try {
             Point mp = this.getMousePosition();
             if (mp != null)
@@ -339,7 +314,7 @@ public class Framework extends Canvas {
     public synchronized void addMouseListener(MouseListener l) {
         super.addMouseListener(l);
     }
-
+/*
     @Override
     public void mouseClicked(MouseEvent e) {
         switch (gameState) {
@@ -359,5 +334,5 @@ public class Framework extends Canvas {
         if (e.getKeyCode() == KeyEvent.VK_B) {  // 'B' 키를 누르면 불렛타임 활성화
             game.activateBulletTime();  // 불렛타임 활성화
         }
-    }
+    }*/
 }

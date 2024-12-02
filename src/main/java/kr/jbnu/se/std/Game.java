@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
+import javax.swing.*;
 import java.io.*;
 import kr.jbnu.se.std.GraphicsUtils;
 
@@ -37,6 +38,7 @@ public class Game {
     private long gameStartTime; // 게임 시작 시간
     private static BufferedImage backgroundImg;
     private BulletTime bullettime = new BulletTime();
+    private volatile boolean isLoaded = false;
     /**
      * We use this to generate a random number.
      */
@@ -89,7 +91,7 @@ public class Game {
     /**
      * Bottom grass.
      */
-    private BufferedImage grassImg;
+    private static BufferedImage grassImg;
 
     /**
      * Duck image.
@@ -149,9 +151,7 @@ public class Game {
         Thread threadForInitGame = new Thread() {
             @Override
             public void run(){
-                // Sets variables and objects for the game.
                 Initialize();
-                // Load game files (images, sounds, ...)
                 LoadContent();
                 loadHighScore();
 
@@ -189,7 +189,7 @@ public class Game {
     /**
      * Set variables and objects for the game.
      */
-    private void Initialize() {
+    void Initialize() {
         random = new Random();
         font = new Font("monospaced", Font.BOLD, 18);
 
@@ -256,11 +256,8 @@ public class Game {
     /**
      * Load game files - images, sounds, ...
      */
-    private void LoadContent() {
+    protected void LoadContent() {
         try {
-
-            URL backgroundImgUrl = this.getClass().getResource("/images/background.jpg");
-
             itemImage[0] = ImageIO.read(Objects.requireNonNull(this.getClass().getResource("/images/back1.jpg"))); // default
             itemImage[1] = ImageIO.read(Objects.requireNonNull(this.getClass().getResource("/images/back2.jpg"))); // purchased item 1
             itemImage[2] = ImageIO.read(Objects.requireNonNull(this.getClass().getResource("/images/back3.jpg"))); // purchased item 2
@@ -269,7 +266,20 @@ public class Game {
             backgroundImg = itemImage[3];
 
             URL grassImgUrl = this.getClass().getResource("/images/grass.png");
-            grassImg = ImageIO.read(grassImgUrl);
+            if (grassImgUrl == null) {
+                System.err.println("Cannot find resource: /images/grass.png");
+            } else {
+                try {
+                    grassImg = ImageIO.read(new URL("/images/grass.png"));
+                } catch (IOException ex) {
+                    System.err.println("Failed to load grass image: " + ex.getMessage());
+                }
+            }
+            /*grassImg = ImageIO.read(Objects.requireNonNull(this.getClass().getResource("/images/grass.png")));
+            if (grassImgUrl == null) {
+                System.err.println("Cannot find grass image resource");
+                return;
+            }*/
 
             URL duckImgUrl = this.getClass().getResource("/images/duck.png");
             duckImg = ImageIO.read(duckImgUrl);
@@ -295,14 +305,9 @@ public class Game {
         } catch (IOException ex) {
             Logger.getLogger(Game.class.getName()).log(Level.SEVERE, null, ex);
         }
+        isLoaded = true;
     }
 
-    /**
-     * Update game logic.
-     *
-     * @param gameTime gameTime of the game.
-     * @param mousePosition current mouse position.
-     */
     private void createNewDucks(long gameTime) { // 오리 생성
         if (System.nanoTime() - Duck.lastDuckTime >= Duck.timeBetweenDucks) {
             ducks.add(new Duck(Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200),
@@ -392,9 +397,19 @@ public class Game {
             Framework.gameState = Framework.GameState.GAMEOVER;
         }
     }
+    private void waitForLoading(){
+        while (!isLoaded) {
+            try {
+                Thread.sleep(100);  // 로딩이 완료될 때까지 잠시 대기
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();  // 인터럽트 발생 시 스레드 인터럽트 상태 설정
+            }
+        }
+    }
 
     public void UpdateGame(long gameTime, Point mousePosition) {
         // 새로운 오리 생성 및 업데이트 로직
+        waitForLoading();
         if (score > Framework.highScore) {
             Framework.highScore = score;  // 최고 점수를 갱신
             saveHighScore();  // 갱신된 점수를 저장
@@ -413,6 +428,9 @@ public class Game {
      * @param mousePosition current mouse position.
      */
     public void Draw(Graphics2D g2d, Point mousePosition) {
+        if (mousePosition == null) {
+            mousePosition = new Point(0, 0); // Provide a default position or skip drawing that requires mousePosition
+        }
         g2d.drawImage(backgroundImg, 0, 0, Framework.frameWidth, Framework.frameHeight, null);
 
         // Here we draw all the ducks.
