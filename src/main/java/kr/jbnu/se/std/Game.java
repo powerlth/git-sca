@@ -10,7 +10,9 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
+import javax.swing.*;
 import java.io.*;
+import kr.jbnu.se.std.GraphicsUtils;
 
 public class Game {
     private final String highScoreFilePath = "src/main/resources/highscore.txt"; // 프로젝트 내의 resources 폴더에 저장
@@ -36,6 +38,7 @@ public class Game {
     private long gameStartTime; // 게임 시작 시간
     private static BufferedImage backgroundImg;
     private BulletTime bullettime = new BulletTime();
+    private volatile boolean isLoaded = false;
     /**
      * We use this to generate a random number.
      */
@@ -88,7 +91,7 @@ public class Game {
     /**
      * Bottom grass.
      */
-    private BufferedImage grassImg;
+    private static BufferedImage grassImg;
 
     /**
      * Duck image.
@@ -148,9 +151,7 @@ public class Game {
         Thread threadForInitGame = new Thread() {
             @Override
             public void run(){
-                // Sets variables and objects for the game.
                 Initialize();
-                // Load game files (images, sounds, ...)
                 LoadContent();
                 loadHighScore();
 
@@ -188,7 +189,7 @@ public class Game {
     /**
      * Set variables and objects for the game.
      */
-    private void Initialize() {
+    void Initialize() {
         random = new Random();
         font = new Font("monospaced", Font.BOLD, 18);
 
@@ -255,11 +256,8 @@ public class Game {
     /**
      * Load game files - images, sounds, ...
      */
-    private void LoadContent() {
+    protected void LoadContent() {
         try {
-
-            URL backgroundImgUrl = this.getClass().getResource("/images/background.jpg");
-
             itemImage[0] = ImageIO.read(Objects.requireNonNull(this.getClass().getResource("/images/back1.jpg"))); // default
             itemImage[1] = ImageIO.read(Objects.requireNonNull(this.getClass().getResource("/images/back2.jpg"))); // purchased item 1
             itemImage[2] = ImageIO.read(Objects.requireNonNull(this.getClass().getResource("/images/back3.jpg"))); // purchased item 2
@@ -268,7 +266,20 @@ public class Game {
             backgroundImg = itemImage[3];
 
             URL grassImgUrl = this.getClass().getResource("/images/grass.png");
-            grassImg = ImageIO.read(grassImgUrl);
+            if (grassImgUrl == null) {
+                System.err.println("Cannot find resource: /images/grass.png");
+            } else {
+                try {
+                    grassImg = ImageIO.read(new URL("/images/grass.png"));
+                } catch (IOException ex) {
+                    System.err.println("Failed to load grass image: " + ex.getMessage());
+                }
+            }
+            /*grassImg = ImageIO.read(Objects.requireNonNull(this.getClass().getResource("/images/grass.png")));
+            if (grassImgUrl == null) {
+                System.err.println("Cannot find grass image resource");
+                return;
+            }*/
 
             URL duckImgUrl = this.getClass().getResource("/images/duck.png");
             duckImg = ImageIO.read(duckImgUrl);
@@ -294,75 +305,62 @@ public class Game {
         } catch (IOException ex) {
             Logger.getLogger(Game.class.getName()).log(Level.SEVERE, null, ex);
         }
+        isLoaded = true;
     }
 
-    /**
-     * Update game logic.
-     *
-     * @param gameTime gameTime of the game.
-     * @param mousePosition current mouse position.
-     */
-    public void UpdateGame(long gameTime, Point mousePosition) {
-        // 새로운 오리 생성 및 업데이트 로직
-        if (score > Framework.highScore) {
-            Framework.highScore = score;  // 최고 점수를 갱신
-            saveHighScore();  // 갱신된 점수를 저장
-        }
+    private void createNewDucks(long gameTime) { // 오리 생성
         if (System.nanoTime() - Duck.lastDuckTime >= Duck.timeBetweenDucks) {
             ducks.add(new Duck(Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200),
                     Duck.duckLines[Duck.nextDuckLines][1],
-                    (int)(Duck.duckLines[Duck.nextDuckLines][2] * duckSpeedMultiplier), // 여기다 추가해야합니다: 속도 변경
-                    Duck.duckLines[Duck.nextDuckLines][3],
-                    duckImg, this));
-            ducks.add(new Duck(Duck.FlyingduckLines[Duck.nextDuckLines][0] + random.nextInt(200), Duck.FlyingduckLines[Duck.nextDuckLines][1], Duck.FlyingduckLines[Duck.nextDuckLines][2], Duck.FlyingduckLines[Duck.nextDuckLines][3], topDuckImg, this));
-
+                    (int)(Duck.duckLines[Duck.nextDuckLines][2] * duckSpeedMultiplier),
+                    Duck.duckLines[Duck.nextDuckLines][3], duckImg, this));
+            ducks.add(new Duck(Duck.FlyingduckLines[Duck.nextDuckLines][0] + random.nextInt(200),
+                    Duck.FlyingduckLines[Duck.nextDuckLines][1],
+                    Duck.FlyingduckLines[Duck.nextDuckLines][2],
+                    Duck.FlyingduckLines[Duck.nextDuckLines][3], topDuckImg, this));
             Duck.nextDuckLines++;
             if (Duck.nextDuckLines >= Duck.duckLines.length)
                 Duck.nextDuckLines = 0;
-
             Duck.lastDuckTime = System.nanoTime();
         }
-        // 보물상자 생성 로직
+    }
+
+    private void manageTreasureBox(long gameTime) { //보물상자 관리
         if (!treasureBoxCreated && System.nanoTime() >= nextTreasureBoxTime) {
             treasureBox = new TreasureBox(100, 300, treasureImg);
             treasureBoxCreated = true;
-            treasureBoxStartTime = System.nanoTime(); // 보물상자 생성 시간 기록
+            treasureBoxStartTime = System.nanoTime();
             messageDisplayTime = System.nanoTime();
             treasureBoxSurvivalTime = 0;
-
             System.out.println("보물상자가 생성되었습니다!");
-
-            // 다음 보물상자 생성 시간을 설정
             setNextTreasureBoxTime();
         }
-        if (kills >= 50 * stage) { // kills가 100이 넘으면 다음 스테이지로
-            stage++;
-            duckSpeedMultiplier *= 1.2; // 스테이지가 증가할 때마다 오리 속도 1.2배 증가
-            stageMessageTime = System.nanoTime(); // 스테이지 메시지 표시 시간 기록
 
-            System.out.println(stage + "번째 스테이지로 이동하였습니다.");
-        }
-
-        // 보물상자 업데이트 및 제거 로직
         if (treasureBox != null && treasureBox.isActive()) {
-            // 보물상자 생존 시간 업데이트
             treasureBoxSurvivalTime = (System.nanoTime() - treasureBoxStartTime) / Framework.secInNanosec;
-
-            // 보물상자가 30초 이상 생존하면 점수 추가 및 보물상자 제거
             if (treasureBoxSurvivalTime >= 30) {
-                lastTreasureBoxScore = 100 + random.nextInt(901); // 100~1000점 추가
+                lastTreasureBoxScore = 100 + random.nextInt(901);
                 score += lastTreasureBoxScore;
-                treasureBox = null; // 보물상자 제거
-
-                treasureBoxCreated = false; // 보물상자 초기화
-                setNextTreasureBoxTime(); // 다음 보물상자 생성 시간 설정
-
+                treasureBox = null;
+                treasureBoxCreated = false;
+                setNextTreasureBoxTime();
                 treasureBoxMessageTime = System.nanoTime();
             } else {
-                treasureBox.Update(); // 보물상자 업데이트
+                treasureBox.Update();
             }
         }
-        // 오리 업데이트
+    }
+
+    private void updateStage(long gameTime) { //스테이지 업데이트
+        if (kills >= 50 * stage) {
+            stage++;
+            duckSpeedMultiplier *= 1.2;
+            stageMessageTime = System.nanoTime();
+            System.out.println(stage + "번째 스테이지로 이동하였습니다.");
+        }
+    }
+
+    private void updateDucks(long gameTime) { //오리 업데이트
         Iterator<Duck> iterator = ducks.iterator();
         while (iterator.hasNext()) {
             Duck duck = iterator.next();
@@ -373,33 +371,55 @@ public class Game {
                 runawayDucks++;
             }
             if (treasureBox != null && treasureBox.isActive() && treasureBox.isHitByDuck(duck.x, duck.y, duckImg.getWidth(), duckImg.getHeight())) {
-                treasureBox.incrementHitCount(); // 오리가 보물상자를 맞았을 때 hitCount 증가
+                treasureBox.incrementHitCount();
             }
         }
-        // 플레이어의 사격 처리
-        boolean currentMouseButtonState = Canvas.mouseButtonState(MouseEvent.BUTTON1); // 현재 마우스 버튼 상태
+    }
 
+    private void handlePlayerShooting(long gameTime, Point mousePosition) {// 사격 처리
+        boolean currentMouseButtonState = Canvas.mouseButtonState(MouseEvent.BUTTON1);
         if (currentMouseButtonState) {
-            // 마우스 버튼이 눌린 상태
-            if (!isMouseButtonPressed) { // 버튼이 새로 눌린 경우
-                if (System.nanoTime() - lastTimeShoot >= timeBetweenShots) {
-                    shoots++;
-                    checkDuckHit(mousePosition); // 오리 맞추기 체크
-                    lastTimeShoot = System.nanoTime();
-                }
-                isMouseButtonPressed = true; // 버튼이 눌렸음을 기록
+            if (!isMouseButtonPressed && System.nanoTime() - lastTimeShoot >= timeBetweenShots) {
+                shoots++;
+                checkDuckHit(mousePosition);
+                lastTimeShoot = System.nanoTime();
             }
+            isMouseButtonPressed = true;
         } else {
-            // 마우스 버튼이 놓인 상태
             if (isMouseButtonPressed) {
-                isMouseButtonPressed = false; // 버튼 상태 리셋
+                isMouseButtonPressed = false;
             }
         }
+    }
 
-        // 50번의 도망간 오리로 게임 종료
+    private void checkGameOver(long gameTime) { //게임 오버 조건 검사
         if (runawayDucks >= 50) {
             Framework.gameState = Framework.GameState.GAMEOVER;
         }
+    }
+    private void waitForLoading(){
+        while (!isLoaded) {
+            try {
+                Thread.sleep(100);  // 로딩이 완료될 때까지 잠시 대기
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();  // 인터럽트 발생 시 스레드 인터럽트 상태 설정
+            }
+        }
+    }
+
+    public void UpdateGame(long gameTime, Point mousePosition) {
+        // 새로운 오리 생성 및 업데이트 로직
+        waitForLoading();
+        if (score > Framework.highScore) {
+            Framework.highScore = score;  // 최고 점수를 갱신
+            saveHighScore();  // 갱신된 점수를 저장
+        }
+        createNewDucks(gameTime);
+        manageTreasureBox(gameTime);
+        updateStage(gameTime);
+        updateDucks(gameTime);
+        handlePlayerShooting(gameTime, mousePosition);
+        checkGameOver(gameTime);
     }
     /**
      * Draw the game to the screen.
@@ -408,6 +428,9 @@ public class Game {
      * @param mousePosition current mouse position.
      */
     public void Draw(Graphics2D g2d, Point mousePosition) {
+        if (mousePosition == null) {
+            mousePosition = new Point(0, 0); // Provide a default position or skip drawing that requires mousePosition
+        }
         g2d.drawImage(backgroundImg, 0, 0, Framework.frameWidth, Framework.frameHeight, null);
 
         // Here we draw all the ducks.
@@ -421,26 +444,22 @@ public class Game {
 
         if (treasureBox != null && treasureBox.isActive()) {
             treasureBox.Draw(g2d);
-            g2d.setFont(new Font("monospaced", Font.BOLD, 20));
-            g2d.setColor(Color.RED);
+            GraphicsUtils.setCommonGraphicsSettings(g2d);
             g2d.drawString("Treasure Box Survival Time: " + treasureBoxSurvivalTime + "s", 10, 50); // 좌상단에 시간 표시
         }
         if (System.nanoTime() - stageMessageTime <= STAGE_MESSAGE_DURATION) {
-            g2d.setFont(new Font("monospaced", Font.BOLD, 30));
-            g2d.setColor(Color.cyan);
+            GraphicsUtils.setCommonGraphicsSettings(g2d);
             g2d.drawString(stage-1 + "번째 스테이지를 클리어하였습니다!", Framework.frameWidth / 2 - 250, Framework.frameHeight / 2);
         }
 
 
         // 보물상자가 나타났을 때 메시지 표시 (3초 동안)
         if (System.nanoTime() - messageDisplayTime <= MESSAGE_DISPLAY_DURATION) {
-            g2d.setFont(new Font("monospaced", Font.BOLD, 30));
-            g2d.setColor(Color.YELLOW);
+            GraphicsUtils.setCommonGraphicsSettings(g2d);
             g2d.drawString("보물상자가 나타났습니다! ", Framework.frameWidth / 2 - 100, Framework.frameHeight / 2);
         }
         if (System.nanoTime() - treasureBoxMessageTime <= MESSAGE_DURATION) {
-            g2d.setFont(new Font("monospaced", Font.BOLD, 30));
-            g2d.setColor(Color.RED);
+            GraphicsUtils.setCommonGraphicsSettings(g2d);
 
             // 첫 번째 줄: "보물상자를 지켜 점수를 얻었습니다!"
             g2d.drawString("보물상자를 지켜 점수를 얻었습니다!", Framework.frameWidth / 2 - 200, Framework.frameHeight / 2);
@@ -459,8 +478,7 @@ public class Game {
         g2d.drawString("MISS: " + missClicks, 580, 21);
         g2d.drawString("MONEY: " + kr.jbnu.se.std.Money.getMoney(), 10, 41);
         // 오리 속도 및 스테이지 정보 표시
-        g2d.setFont(new Font("monospaced", Font.BOLD, 20));
-        g2d.setColor(Color.orange);
+        GraphicsUtils.setCommonGraphicsSettings(g2d);
         g2d.drawString("현재 스테이지: " + stage, 10, 95); // 좌상단에 스테이지 표시
         g2d.drawString("오리 속도 배수: " + String.format("%.1f", duckSpeedMultiplier), 10, 125); // 좌상단에 오리 속도 배수 표시
 

@@ -49,8 +49,7 @@ public class MainMenu {
         int frameWidth = Framework.frameWidth;
         int frameHeight = Framework.frameHeight;
 
-        g2d.setFont(new Font("monospaced", Font.BOLD, 30));
-        g2d.setColor(Color.RED);
+        GraphicsUtils.setCommonGraphicsSettings(g2d);
         g2d.drawString("High Score: " + Framework.highScore, Framework.frameWidth / 2 - -100, Framework.frameHeight / 2 - 160);
 
 
