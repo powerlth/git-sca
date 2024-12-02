@@ -25,7 +25,7 @@ public abstract class Canvas extends JPanel implements KeyListener, MouseListene
     private boolean[] keyboardState = new boolean[525];
     
     // Mouse states - Here are stored states for mouse keys - is it down or not.
-    private boolean[] mouseState = new boolean[3];
+    private static boolean[] mouseState = new boolean[3];
         
     
     public Canvas()
@@ -104,13 +104,13 @@ public abstract class Canvas extends JPanel implements KeyListener, MouseListene
      * @param button Number of mouse button for which you want to check the state.
      * @return true if the button is down, false if the button is not down.
      */
-    public boolean mouseButtonState(int button)
+    public static boolean mouseButtonState(int button)
     {
         return mouseState[button - 1];
     }
     
     // Sets mouse key status.
-    private void mouseKeyStatus(MouseEvent e, boolean status)
+    private static void mouseKeyStatus(MouseEvent e, boolean status)
     {
         if(e.getButton() == MouseEvent.BUTTON1)
             mouseState[0] = status;
