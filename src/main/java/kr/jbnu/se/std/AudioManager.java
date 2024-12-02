@@ -7,25 +7,19 @@ public class AudioManager {
     private Clip soundEffectClip;
     private Clip backgroundMusicClip;
 
-    public void loadSound(String soundFileName) {
+    public void playSoundEffect(String resourcePath){
         try {
-            AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(getClass().getResource(soundFileName));
+            InputStream audioSrc = getClass().getResourceAsStream(resourcePath);
+            if (audioSrc == null) {
+                throw new RuntimeException("파일을 찾을 수 없습니다: " + resourcePath);
+            }
+
+            AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(audioSrc);
             soundEffectClip = AudioSystem.getClip();
             soundEffectClip.open(audioInputStream);
-        } catch (Exception e) {
-            System.err.println("Error loading sound: " + soundFileName);
-        }
-    }
-
-    public void playSound() {
-        if (soundEffectClip != null) {
             soundEffectClip.start();
-        }
-    }
-
-    public void stopSound() {
-        if (soundEffectClip != null && soundEffectClip.isRunning()) {
-            soundEffectClip.stop();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 

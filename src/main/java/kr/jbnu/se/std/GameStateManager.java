@@ -2,19 +2,17 @@ package kr.jbnu.se.std;
 
 import java.awt.*;
 import java.awt.Toolkit;
-import static kr.jbnu.se.std.Framework.secInNanosec;
+import static kr.jbnu.se.std.Framework.SECINNANOSEC;
 
 public class GameStateManager {
     private int gameState;
     private Framework.GameState currentState;
-    private Framework.GameState previousState;
     private AudioManager audioManager;
     private long gameTime;
     private long lastTime;
     private Game game;
     private Framework framework;
     private long visualizingTime = 0, lastVisualizingTime = System.nanoTime();
-    private long beginTime, timeTaken, timeLeft;
 
     public GameStateManager() {
         this.currentState = Framework.GameState.STARTING;  // Default starting state
@@ -24,10 +22,6 @@ public class GameStateManager {
         this.currentState = Framework.GameState.STARTING;
     }
 
-    public Framework.GameState getCurrentState(){
-        return currentState;
-    }
-
     public void setCurrentState(Framework.GameState newState){
         System.out.println("Transitioning from " + currentState + " to " + newState);
         if (newState == null) {
@@ -35,6 +29,7 @@ public class GameStateManager {
         }
         transitionToState(newState);
         this.currentState = newState;
+        //updateState();
     }
 
     public synchronized void updateState() {
@@ -83,13 +78,8 @@ public class GameStateManager {
         }
     }
 
-
-    public void setGameState(int state) {
-        this.gameState = state;
-    }
-
-    public int getGameState() {
-        return gameState;
+    public void getGameState(Framework.GameState state) {
+        gameState = state.ordinal();
     }
 
     private void handleMainMenuLogic() {
@@ -116,9 +106,8 @@ public class GameStateManager {
     }
 
     private void handleVisualizingLogic() {
-        if (framework.getWidth() > 1 && visualizingTime > secInNanosec) {
-            framework.frameWidth = framework.getWidth();
-            framework.frameHeight = framework.getHeight();
+        if (framework.getWidth() > 1 && visualizingTime > SECINNANOSEC) {
+            framework.setFrameSize(framework.getWidth(),framework.getHeight());
             setCurrentState(Framework.GameState.STARTING);
         } else {
             visualizingTime += System.nanoTime() - lastVisualizingTime;

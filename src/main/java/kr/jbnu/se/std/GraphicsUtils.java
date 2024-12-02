@@ -9,4 +9,10 @@ public class GraphicsUtils {
     g2d.setFont(new Font("monospaced", Font.BOLD, 30));
     g2d.setColor(Color.RED);
     }
+    protected static void setFont(Graphics2D g2d, String font, int size) {
+        g2d.setFont(new Font(font, Font.BOLD, size));
+    }
+    protected static Font newFont(String font, int size) {
+        return new Font(font, Font.BOLD, size);
+    }
 }

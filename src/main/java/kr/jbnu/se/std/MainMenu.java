@@ -2,19 +2,13 @@ package kr.jbnu.se.std;
 
 import java.awt.*;
 import javax.swing.JButton;
-import javax.swing.JPanel;
-import java.awt.event.MouseEvent;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import javax.swing.JButton;
 import javax.imageio.ImageIO;
 import java.io.IOException;
 import java.net.URL;
 
 public class MainMenu {
-    private JButton startButton;
-    private JButton[] stageButtons; // 스테이지 선택 버튼 배열
+    protected JButton startButton;
+    protected JButton[] stageButtons; // 스테이지 선택 버튼 배열
     private int selectedStage = 1;
     private Image backgroundImage;// 선택된 스테이지
 
@@ -78,12 +72,31 @@ public class MainMenu {
             g2d.drawString(stageButtons[i].getText(), stageButtons[i].getX() + 40, stageButtons[i].getY() + 30);
         }
     }
+    public Rectangle getStartButtonPosition() {
+        return new Rectangle(startButton.getX(), startButton.getY(), startButton.getWidth(), startButton.getHeight());
+    }
+
+    public Rectangle[] getStageButtonPositions() {
+        Rectangle[] positions = new Rectangle[stageButtons.length];
+        for (int i = 0; i < stageButtons.length; i++) {
+            // 각 버튼의 위치와 크기 설정, 예제로만 설정
+            positions[i] = new Rectangle(100, 200 + i * 60, 200, 50);
+        }
+        return positions;
+    }
+
+    public void setSelectedStage(int stage) {
+        if (stage >= 1 && stage <= stageButtons.length) {
+            selectedStage = stage;
+            System.out.println("Selected Stage: " + selectedStage);
+        }
+    }
 
     public int getSelectedStage() {
         return selectedStage;
     }
 
-    public void MouseClicked(MouseEvent e) {
+    /*public void MouseClicked(MouseEvent e) {
         // 시작 버튼 클릭 처리
         if (new Rectangle(startButton.getX(), startButton.getY(), startButton.getWidth(), startButton.getHeight()).contains(e.getPoint())) {
             Framework.gameState = Framework.GameState.PLAYING;
@@ -99,5 +112,5 @@ public class MainMenu {
                 System.out.println("Selected Stage: " + selectedStage);
             }
         }
-    }
+    }*/
 }
