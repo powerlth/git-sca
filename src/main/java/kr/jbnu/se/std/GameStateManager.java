@@ -21,18 +21,26 @@ public class GameStateManager {
         this.framework = framework;
         this.currentState = Framework.GameState.STARTING;
     }
-
-    public void setCurrentState(Framework.GameState newState){
-        System.out.println("Transitioning from " + currentState + " to " + newState);
-        if (newState == null) {
-            throw new IllegalArgumentException("New state cannot be null");
-        }
-        transitionToState(newState);
-        this.currentState = newState;
-        //updateState();
+    public Framework.GameState getCurrentState(){
+        return currentState;
     }
 
-    public synchronized void updateState() {
+    public void setCurrentState(Framework.GameState newState){
+        System.out.println("[GameStateManager] Transitioning GameStateManager.currentState from " + currentState + " to " + newState);
+        if (newState == null) {
+            throw new IllegalArgumentException("[GameStatemanager] New state cannot be null");
+        } else if (newState != Framework.gameState) {
+            System.out.println("[GameStateManager] Transitioning Framework.gameState from " + Framework.gameState + " to " + newState);
+            Framework.gameState = newState;
+        } else if (newState != Framework.GameState.MAIN_MENU) transitionToState(newState);
+        else;
+        this.currentState = newState;
+    }
+
+    public synchronized void updateState(Framework.GameState tempGS) {
+        if (tempGS == null || tempGS == Framework.GameState.STARTING);
+        else if (tempGS != getCurrentState()) setCurrentState(tempGS);
+        else;
         switch (currentState) {
             case MAIN_MENU:
                 handleMainMenuLogic();
@@ -76,6 +84,9 @@ public class GameStateManager {
         if (newState != Framework.GameState.MAIN_MENU && currentState == Framework.GameState.MAIN_MENU) {
             audioManager.stopBackgroundMusic();
         }
+    }
+    public void setGameState(int state){
+        this.gameState = state;
     }
 
     public void getGameState(Framework.GameState state) {
