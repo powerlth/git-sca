@@ -124,7 +124,7 @@ public class Framework extends Canvas {
             try {
                 Thread.sleep(timeLeft);
             } catch (InterruptedException ex) { }*/
-            gameStateManager.updateState();
+            gameStateManager.updateState(gameState);
             repaint();
             sleepTimeCalculation(beginTime);
         }
